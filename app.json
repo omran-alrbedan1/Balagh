@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Balagh",
+    "slug": "balagh",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.balagh.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs camera access to attach photos to complaints.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to tag complaints.",
+        "NSPhotoLibraryUsageDescription": "This app needs photo access to attach images to complaints."
+      }
+    },
+    "android": {
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.balagh.app",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6e968168-ff98-44fd-8967-b9ace11a3045"
+      }
+    },
+    "owner": "omran_alrbedan",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6e968168-ff98-44fd-8967-b9ace11a3045"
+    }
+  }
+}
