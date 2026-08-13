@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/Button';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 import { AttachmentPicker } from '@/features/complaints/components/AttachmentPicker';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
+import { StepBackButton } from '@/features/complaints/components/StepBackButton';
 
 interface StepPhotosProps {
   onBack: () => void;
@@ -11,41 +11,23 @@ interface StepPhotosProps {
 }
 
 export function StepPhotos({ onBack, onNext }: StepPhotosProps) {
+  const { t } = useTranslation();
+
   return (
-    <View style={styles.container}>
+    <View className="gap-6">
       <View>
-        <Text style={styles.title}>Add photos</Text>
-        <Text style={styles.subtitle}>
-          Photos help the assigned team understand and resolve the issue faster.
+        <Text className="text-[22px] font-black text-base-900">{t('complaints.addPhotos')}</Text>
+        <Text className="text-[15px] leading-[21px] text-base-500">
+          {t('complaints.addPhotosSubtitle')}
         </Text>
       </View>
 
       <AttachmentPicker />
 
-      <View style={styles.actions}>
-        <Button fullWidth={false} label="Back" onPress={onBack} variant="secondary" />
-        <Button fullWidth={false} label="Continue" onPress={onNext} />
+      <View className="flex-row gap-4">
+        <StepBackButton label={t('common.back')} onPress={onBack} />
+        <SubmitButton fullWidth={false} label={t('common.continue')} onPress={onNext} />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  container: {
-    gap: spacing.lg,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-});

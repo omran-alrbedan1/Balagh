@@ -1,6 +1,14 @@
 import { Href, Link } from 'expo-router';
 import { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -15,6 +23,7 @@ export interface ButtonProps {
   loading?: boolean;
   onPress?: () => void;
   size?: 'md' | 'lg';
+  style?: StyleProp<ViewStyle>;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
 }
 
@@ -28,6 +37,7 @@ export function Button({
   loading = false,
   onPress,
   size = 'md',
+  style,
   variant = 'primary',
 }: ButtonProps) {
   const isDisabled = disabled || loading;
@@ -40,9 +50,10 @@ export function Button({
       onPress={isDisabled ? undefined : onPress}
       style={({ pressed }) => [
         styles.button,
-        styles[variant],
+        getVariantStyle(variant),
         size === 'lg' && styles.large,
         fullWidth && styles.fullWidth,
+        style,
         isDisabled && styles.disabled,
         pressed && !isDisabled && styles.pressed,
       ]}
@@ -73,12 +84,28 @@ export function Button({
 function getContentColor(variant: ButtonProps['variant']) {
   switch (variant) {
     case 'secondary':
+      return colors.primary;
     case 'ghost':
       return colors.primary;
     case 'danger':
+      return '#FFFFFF';
     case 'primary':
     default:
       return '#FFFFFF';
+  }
+}
+
+function getVariantStyle(variant: ButtonProps['variant']) {
+  switch (variant) {
+    case 'secondary':
+      return styles.secondary;
+    case 'ghost':
+      return styles.ghost;
+    case 'danger':
+      return styles.danger;
+    case 'primary':
+    default:
+      return styles.primary;
   }
 }
 
@@ -107,7 +134,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#303030',
   },
   icon: {
     alignItems: 'center',

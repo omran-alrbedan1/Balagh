@@ -1,17 +1,23 @@
 import { Role } from '@/constants/roles';
 
 export interface AuthUser {
-  id: string;
+  department?: unknown;
+  email?: string | null;
+  id: number | string;
+  is_active?: boolean;
+  last_login_at?: string | null;
   name: string;
-  email?: string;
-  phone?: string;
-  role: Role;
+  national_id?: string | null;
+  phone?: string | null;
+  phone_verified_at?: string | null;
+  role?: Role;
 }
 
 export interface RegisterPayload {
   name: string;
   email?: string;
   phone: string;
+  national_id?: string;
   password: string;
   password_confirmation: string;
 }
@@ -33,9 +39,32 @@ export interface VerifyOtpPayload {
   user_id: string;
   otp: string;
   purpose: 'register' | 'login';
+  device_name?: string;
 }
 
 export interface AuthSessionResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface ResendOtpPayload {
+  user_id: string;
+  purpose: 'register' | 'login';
 }

@@ -1,139 +1,159 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { Globe2, LogOut, Mail, Phone, ShieldCheck } from 'lucide-react-native';
+import { Text, View } from 'react-native';
+import {
+  Globe2,
+  LogOut,
+  Mail,
+  Phone,
+  ShieldCheck,
+  User,
+  Settings,
+  Bell,
+  HelpCircle,
+  ChevronRight,
+  Award,
+} from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { APP_VERSION } from '@/constants/appInfo';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useLogoutAll } from '@/features/auth/hooks/useLogoutAll';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LanguageSwitcher } from '@/features/settings/components/LanguageSwitcher';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const logout = useLogout();
-  const initial = user?.name?.charAt(0).toUpperCase() ?? 'C';
+  const logoutAll = useLogoutAll();
+  const initial = user?.name?.charAt(0).toUpperCase() ?? t('home.citizen').charAt(0);
+  const role = user?.role ?? t('profile.citizenRole');
+
+  const menuItems = [
+    { icon: User, label: t('profile.personalInfo') },
+    { icon: Bell, label: t('profile.notifications') },
+    { icon: Settings, label: t('profile.settings') },
+    { icon: HelpCircle, label: t('profile.helpSupport') },
+  ];
 
   return (
-    <Screen subtitle="Manage your account, language, and session." title="Profile">
-      <Card>
-        <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-          <View style={styles.profileText}>
-            <Text style={styles.name}>{user?.name ?? 'Citizen'}</Text>
-            <View style={styles.metaRow}>
-              <Mail color={colors.textMuted} size={14} />
-              <Text style={styles.meta}>{user?.email ?? 'No email added'}</Text>
+    <Screen subtitle={t('profile.subtitle')} title={t('profile.title')}>
+      {/* Header Card */}
+      <View className="bg-primary-600 dark:bg-primary-700 rounded-3xl p-6 mb-4 shadow-lg shadow-primary-200/50 dark:shadow-primary-900/30">
+        <View className="flex-row items-center gap-4">
+          {/* Avatar */}
+          <View className="w-20 h-20 rounded-full bg-white/20 p-1">
+            <View className="w-full h-full rounded-full bg-white items-center justify-center">
+              <Text className="text-3xl font-black text-primary-600 dark:text-primary-700">
+                {initial}
+              </Text>
             </View>
-            <View style={styles.metaRow}>
-              <Phone color={colors.textMuted} size={14} />
-              <Text style={styles.meta}>{user?.phone ?? 'No phone added'}</Text>
+          </View>
+
+          <View className="flex-1">
+            <Text className="text-white text-xl font-black">{user?.name ?? t('home.citizen')}</Text>
+            <View className="flex-row items-center gap-2 mt-1">
+              <View className="bg-white/20 rounded-full px-3 py-1 flex-row items-center gap-1.5">
+                <ShieldCheck color="#FFFFFF" size={12} />
+                <Text className="text-white text-xs font-bold capitalize">{role}</Text>
+              </View>
+            </View>
+            <View className="flex-col items-start gap-3 mt-2">
+              <View className="flex-row  items-center gap-1">
+                <Mail color="#FFFFFF" size={12} />
+                <Text className="text-white/80 text-sm">{user?.email ?? t('profile.noEmail')}</Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Phone color="#FFFFFF" size={12} />
+                <Text className="text-white/80 text-sm">{user?.phone ?? t('profile.noPhone')}</Text>
+              </View>
             </View>
           </View>
         </View>
-        <View style={styles.rolePill}>
-          <ShieldCheck color={colors.primary} size={14} />
-          <Text style={styles.roleText}>{user?.role ?? 'citizen'}</Text>
-        </View>
+
+        {/* Stats Row - Only if user has reports count */}
+        {user?.reportsCount !== undefined && (
+          <View className="flex-row justify-around mt-6 pt-6 border-t border-white/20">
+            <View className="items-center">
+              <Text className="text-white text-xl font-black">{user.reportsCount}</Text>
+              <View className="flex-row items-center gap-1 mt-0.5">
+                <Award color="rgba(255,255,255,0.7)" size={12} />
+                <Text className="text-white/70 text-xs font-medium">{t('profile.reports')}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Menu Items */}
+      <Card className="mb-4">
+        {menuItems.map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <View
+              key={index}
+              className={`flex-row items-center py-3.5 px-1 ${
+                index < menuItems.length - 1 ? 'border-b border-base-200 dark:border-base-700' : ''
+              }`}
+            >
+              <View className="w-9 h-9 rounded-full bg-primary-50 dark:bg-primary-900/30 items-center justify-center">
+                <Icon color="#2563EB" size={18} />
+              </View>
+              <Text className="flex-1 text-base-900 dark:text-white text-base font-medium ml-3">
+                {item.label}
+              </Text>
+              <ChevronRight color="#9CA3AF" size={18} />
+            </View>
+          );
+        })}
       </Card>
 
-      <Card>
-        <View style={styles.sectionHeader}>
-          <Globe2 color={colors.primary} size={18} />
-          <Text style={styles.sectionTitle}>Language</Text>
+      {/* Language Section */}
+      <Card className="mb-4">
+        <View className="flex-row items-center gap-3 mb-3">
+          <View className="w-9 h-9 rounded-full bg-primary-50 dark:bg-primary-900/30 items-center justify-center">
+            <Globe2 color="#2563EB" size={18} />
+          </View>
+          <Text className="text-base-900 dark:text-white text-base font-bold">
+            {t('profile.language')}
+          </Text>
         </View>
         <LanguageSwitcher />
       </Card>
 
-      <Card>
-        <Text style={styles.meta}>App version</Text>
-        <Text style={styles.version}>{APP_VERSION}</Text>
+      {/* Version Info */}
+      <Card className="mb-4">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-base-500 dark:text-base-400 text-sm">{t('common.appVersion')}</Text>
+          <View className="bg-primary-50 dark:bg-primary-900/30 px-3 py-1 rounded-full">
+            <Text className="text-primary-600 dark:text-primary-400 font-bold text-sm">
+              {APP_VERSION}
+            </Text>
+          </View>
+        </View>
       </Card>
 
+      {/* Logout Button */}
       <Button
-        label="Log out"
-        iconLeft={<LogOut color={colors.primary} size={18} />}
+        label={t('profile.logout')}
+        iconLeft={<LogOut color="#DC2626" size={18} />}
         loading={logout.isPending}
         onPress={() => logout.mutate()}
-        variant="secondary"
+        variant="danger"
       />
+
+      {/* Logout All Button */}
+      <View className="mt-2">
+        <Button
+          label={t('profile.logoutAll')}
+          iconLeft={<LogOut color="#DC2626" size={18} />}
+          loading={logoutAll.isPending}
+          onPress={() => logoutAll.mutate()}
+          variant="danger"
+        />
+      </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 28,
-    height: 56,
-    justifyContent: 'center',
-    width: 56,
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  meta: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  name: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  profileRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  profileText: {
-    flex: 1,
-    gap: 2,
-  },
-  rolePill: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primaryLight,
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  roleText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'capitalize',
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  version: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-});

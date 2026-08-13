@@ -1,13 +1,16 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
-export function LoadingSpinner({ label = 'Loading' }: { label?: string }) {
+export function LoadingSpinner({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <ActivityIndicator color={colors.primary} />
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>{label ?? t('common.loading')}</Text>
     </View>
   );
 }

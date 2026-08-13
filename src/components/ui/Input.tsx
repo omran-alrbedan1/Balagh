@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react-native';
 import { ReactNode, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -84,6 +85,7 @@ export function Input({
   type = 'text',
   ...props
 }: InputProps) {
+  const { t } = useTranslation();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const typeProps = useMemo(() => getInputTypeProps(type), [type]);
   const isPassword = type === 'password';
@@ -119,7 +121,9 @@ export function Input({
         />
         {isPassword ? (
           <Pressable
-            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
+            accessibilityLabel={
+              isPasswordVisible ? t('input.hidePassword') : t('input.showPassword')
+            }
             accessibilityRole="button"
             hitSlop={10}
             onPress={() => setIsPasswordVisible((current) => !current)}

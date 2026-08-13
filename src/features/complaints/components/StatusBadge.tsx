@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ComplaintStatus } from '@/api/types/lookups.types';
-import { STATUS_LABELS, STATUS_TONES } from '@/features/complaints/utils/complaintDisplay';
+import { getStatusLabel, STATUS_TONES } from '@/features/complaints/utils/complaintDisplay';
 import { spacing } from '@/theme/spacing';
 
 export function StatusBadge({ status }: { status: ComplaintStatus }) {
@@ -9,7 +9,7 @@ export function StatusBadge({ status }: { status: ComplaintStatus }) {
 
   return (
     <View style={[styles.badge, { backgroundColor: tone.background, borderColor: tone.border }]}>
-      <Text style={[styles.label, { color: tone.foreground }]}>{STATUS_LABELS[status]}</Text>
+      <Text style={[styles.label, { color: tone.foreground }]}>{getStatusLabel(status)}</Text>
     </View>
   );
 }

@@ -1,6 +1,8 @@
 import { Check, ChevronDown, Search, X } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -31,13 +33,16 @@ export function SelectField({
   loading = false,
   onChange,
   options,
-  placeholder = 'Select an option',
+  placeholder,
   searchable = true,
   value,
 }: SelectFieldProps) {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const selected = options.find((option) => option.id === value);
+  const bottomInset = Math.max(insets.bottom, spacing.sm);
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -80,7 +85,11 @@ export function SelectField({
             numberOfLines={1}
             style={[styles.selectedText, !selected ? styles.placeholder : null]}
           >
-            {loading ? 'Loading...' : selected ? selected.label : placeholder}
+            {loading
+              ? `${t('common.loading')}...`
+              : selected
+                ? selected.label
+                : (placeholder ?? t('select.placeholder'))}
           </Text>
         </View>
         <ChevronDown color={colors.primary} size={20} />
@@ -88,12 +97,12 @@ export function SelectField({
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Modal animationType="slide" transparent visible={open} onRequestClose={close}>
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
+        <View style={[styles.backdrop, { paddingBottom: bottomInset }]}>
+          <View style={[styles.sheet, { paddingBottom: spacing.lg + bottomInset }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>{label}</Text>
               <Pressable
-                accessibilityLabel="Close picker"
+                accessibilityLabel={t('select.closePicker')}
                 accessibilityRole="button"
                 onPress={close}
                 style={styles.closeButton}
@@ -108,7 +117,7 @@ export function SelectField({
                 <TextInput
                   autoCapitalize="none"
                   onChangeText={setQuery}
-                  placeholder="Search..."
+                  placeholder={t('select.search')}
                   placeholderTextColor={colors.textMuted}
                   style={styles.searchInput}
                   value={query}
@@ -117,10 +126,11 @@ export function SelectField({
             ) : null}
 
             <FlatList
+              contentContainerStyle={styles.optionsContent}
               data={filteredOptions}
               keyExtractor={(item) => item.id}
               keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={<Text style={styles.emptyText}>No results found</Text>}
+              ListEmptyComponent={<Text style={styles.emptyText}>{t('select.empty')}</Text>}
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => {
@@ -215,6 +225,9 @@ const styles = StyleSheet.create({
   optionTextWrap: {
     flex: 1,
   },
+  optionsContent: {
+    paddingBottom: spacing.md,
+  },
   placeholder: {
     color: colors.textMuted,
   },
@@ -251,7 +264,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
     maxHeight: '75%',
-    paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },

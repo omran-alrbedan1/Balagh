@@ -2,14 +2,14 @@ import { create } from 'zustand';
 
 import { AuthUser } from '@/api/types/auth.types';
 import { clearSession, getToken, saveSession } from '@/lib/secureStorage';
-import { me } from '@/api/endpoints/auth.api';
+import { extractAuthUser, me } from '@/api/endpoints/auth.api';
 
 interface AuthState {
   isHydrated: boolean;
   token: string | null;
   user: AuthUser | null;
   hydrate: () => Promise<void>;
-  setSession: (token: string, user: AuthUser) => Promise<void>;
+  setSession: (token: string, user: AuthUser | { user: AuthUser }) => Promise<void>;
   clear: () => Promise<void>;
 }
 
@@ -35,8 +35,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   setSession: async (token, user) => {
-    await saveSession(token, user);
-    set({ token, user });
+    const normalizedUser = extractAuthUser(user);
+    await saveSession(token, normalizedUser);
+    set({ token, user: normalizedUser });
   },
   clear: async () => {
     await clearSession();

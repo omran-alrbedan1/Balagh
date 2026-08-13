@@ -4,7 +4,8 @@ export const queryKeys = {
   complaints: (params?: { sort?: string; status?: string }) =>
     ['complaints', params?.status ?? 'all', params?.sort ?? 'newest'] as const,
   complaintsRoot: ['complaints'] as const,
-  categories: (departmentId?: string) => ['lookups', 'categories', departmentId ?? 'all'] as const,
-  departments: ['lookups', 'departments'] as const,
+  categories: (departmentId?: string, language = 'en') =>
+    ['lookups', 'categories', language, departmentId ?? 'all'] as const,
+  departments: (language = 'en') => ['lookups', 'departments', language] as const,
   priorities: ['lookups', 'priorities'] as const,
 };

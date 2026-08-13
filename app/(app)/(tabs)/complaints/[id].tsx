@@ -1,6 +1,21 @@
 import { useLocalSearchParams } from 'expo-router';
-import { AlertTriangle, CalendarDays, ImageIcon, MapPin, UserCheck } from 'lucide-react-native';
-import { Image, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  AlertTriangle,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  FileText,
+  Flag,
+  Hash,
+  ImageIcon,
+  MapPin,
+  TimerReset,
+  UserCheck,
+} from 'lucide-react-native';
+import { ReactNode } from 'react';
+import { Image, RefreshControl, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
 
 import { extractComplaint } from '@/api/endpoints/complaints.api';
 import { Complaint } from '@/api/types/complaint.types';
@@ -20,9 +35,9 @@ import {
   getSlaCountdown,
 } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 export default function ComplaintDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const complaintId = Array.isArray(id) ? id[0] : (id ?? '');
   const complaintQuery = useComplaintDetail(complaintId);
@@ -37,17 +52,21 @@ export default function ComplaintDetailScreen() {
           tintColor={colors.primary}
         />
       }
-      subtitle={complaint ? `Created ${formatDate(complaint.created_at)}` : undefined}
-      title="Complaint Detail"
+      subtitle={
+        complaint
+          ? t('complaints.createdAt', { date: formatDate(complaint.created_at) })
+          : undefined
+      }
+      title={t('complaints.detailTitle')}
     >
-      {complaintQuery.isLoading ? <LoadingSpinner label="Loading complaint" /> : null}
+      {complaintQuery.isLoading ? <LoadingSpinner label={t('complaints.detailLoading')} /> : null}
 
       {complaintQuery.error ? <ErrorState message={complaintQuery.error.message} /> : null}
 
       {!complaintQuery.isLoading && !complaintQuery.error && !complaint ? (
         <EmptyState
-          title="Complaint not found"
-          message="This complaint may have been removed or is unavailable to your account."
+          title={t('complaints.notFoundTitle')}
+          message={t('complaints.notFoundMessage')}
         />
       ) : null}
 
@@ -57,84 +76,205 @@ export default function ComplaintDetailScreen() {
 }
 
 function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
+  const { t } = useTranslation();
   const slaCountdown = getSlaCountdown(complaint.sla_due_at);
   const isBreached = slaCountdown?.includes('breached') || complaint.sla_status === 'breached';
+  const isDueSoon = complaint.sla_status === 'due_soon';
+  const isOnTrack = complaint.sla_status === 'on_track';
+  const attachmentUris = complaint.attachments
+    .map((attachment) => ({
+      id: attachment.id,
+      uri: getAttachmentUri(attachment),
+    }))
+    .filter((attachment): attachment is { id: string; uri: string } => Boolean(attachment.uri));
 
   return (
-    <>
-      <Card>
-        <View style={styles.titleRow}>
-          <View style={styles.titleWrap}>
-            <Text style={styles.complaintTitle}>{complaint.title}</Text>
-            <Text style={styles.reference}>Ref {complaint.client_ref}</Text>
-          </View>
-          <StatusBadge status={complaint.status} />
-        </View>
-        <Text style={styles.description}>{complaint.description}</Text>
-      </Card>
+    <View className="gap-4">
+      <Animated.View entering={ZoomIn.duration(240).springify().damping(18)}>
+        <Card>
+          <View className="gap-4">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1 gap-2">
+                <View className="flex-row items-center gap-2">
+                  <View className="h-9 w-9 items-center justify-center rounded-xl bg-primary-50">
+                    <FileText color={colors.primary} size={19} />
+                  </View>
+                  <Text className="text-xs font-black uppercase text-primary-600">
+                    {t('complaints.caseDetails')}
+                  </Text>
+                </View>
+                <Text className="text-2xl font-black leading-8 text-base-900">
+                  {complaint.title}
+                </Text>
+              </View>
+              <View className="gap-2">
+                <StatusBadge status={complaint.status} />
+                {complaint.sla_status && (
+                  <View
+                    className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 ${
+                      isBreached ? 'bg-danger-100' : isDueSoon ? 'bg-warning-100' : 'bg-success-100'
+                    }`}
+                  >
+                    {isBreached ? (
+                      <AlertTriangle color={colors.danger} size={12} />
+                    ) : isDueSoon ? (
+                      <TimerReset color={colors.warning} size={12} />
+                    ) : (
+                      <CheckCircle2 color={colors.success} size={12} />
+                    )}
+                    <Text
+                      className={`text-xs font-black ${
+                        isBreached
+                          ? 'text-danger-700'
+                          : isDueSoon
+                            ? 'text-warning-700'
+                            : 'text-success-700'
+                      }`}
+                    >
+                      {t(`complaints.slaStatus.${complaint.sla_status}`)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
 
-      <Card>
-        <Text style={styles.sectionTitle}>Case Details</Text>
-        <DetailRow label="Department / Category" value={getDepartmentCategoryLabel(complaint)} />
-        <DetailRow
-          label="Priority"
-          value={getPriorityLabel(complaint)}
-          markerColor={complaint.priority?.color}
-        />
-        <DetailRow
-          icon={<CalendarDays color={colors.textMuted} size={16} />}
-          label="Created"
-          value={formatDate(complaint.created_at)}
-        />
-        {complaint.assigned_employee ? (
-          <DetailRow
-            icon={<UserCheck color={colors.textMuted} size={16} />}
-            label="Assigned Employee"
-            value={complaint.assigned_employee.name}
-          />
-        ) : null}
-        {complaint.location?.address ? (
-          <DetailRow
-            icon={<MapPin color={colors.textMuted} size={16} />}
-            label="Location"
-            value={complaint.location.address}
-          />
-        ) : null}
-        {slaCountdown ? (
-          <View style={[styles.slaBox, isBreached ? styles.slaBreached : null]}>
-            <AlertTriangle color={isBreached ? colors.danger : colors.warning} size={18} />
-            <Text style={[styles.slaText, isBreached ? styles.slaTextBreached : null]}>
-              {slaCountdown}
-            </Text>
-          </View>
-        ) : null}
-      </Card>
+            <Text className="text-[15px] leading-6 text-base-700">{complaint.description}</Text>
 
-      <Card>
-        <View style={styles.sectionHeader}>
-          <ImageIcon color={colors.primary} size={18} />
-          <Text style={styles.sectionTitle}>Attachments</Text>
-        </View>
-        {complaint.attachments.length > 0 ? (
-          <View style={styles.gallery}>
-            {complaint.attachments.map((attachment) => (
-              <Image
-                key={attachment.id}
-                source={{ uri: getAttachmentUri(attachment) }}
-                style={styles.attachment}
+            <View className="flex-row items-center gap-2 rounded-xl border border-primary-100 bg-primary-50 px-3 py-2">
+              <Hash color={colors.primary} size={16} />
+              <Text className="text-sm font-extrabold text-primary-700">
+                {complaint.complaint_number
+                  ? t('complaints.complaintNumber', { number: complaint.complaint_number })
+                  : t('complaints.ref', { ref: complaint.client_ref })}
+              </Text>
+            </View>
+          </View>
+        </Card>
+      </Animated.View>
+
+      <AnimatedSection delay={80}>
+        <Card>
+          <SectionTitle
+            icon={<Building2 color={colors.primary} size={19} />}
+            title={t('complaints.caseDetails')}
+          />
+          <View className="gap-3">
+            <DetailRow
+              icon={<Building2 color={colors.primary} size={18} />}
+              label={t('complaintReview.departmentCategory')}
+              value={getDepartmentCategoryLabel(complaint)}
+            />
+            <DetailRow
+              icon={<Flag color={complaint.priority?.color ?? colors.warning} size={18} />}
+              label={t('common.priority')}
+              markerColor={complaint.priority?.color}
+              value={getPriorityLabel(complaint)}
+            />
+            <DetailRow
+              icon={<CalendarDays color={colors.primary} size={18} />}
+              label={t('complaints.created')}
+              value={formatDate(complaint.created_at)}
+            />
+            {complaint.assigned_employee ? (
+              <DetailRow
+                icon={<UserCheck color={colors.primary} size={18} />}
+                label={t('complaints.assignedEmployee')}
+                value={complaint.assigned_employee.name}
               />
-            ))}
+            ) : null}
+            {complaint.location?.address ? (
+              <DetailRow
+                icon={<MapPin color={colors.primary} size={18} />}
+                label={t('complaints.location')}
+                value={complaint.location.address}
+              />
+            ) : null}
           </View>
-        ) : (
-          <Text style={styles.muted}>No attachments were submitted with this complaint.</Text>
-        )}
-      </Card>
 
-      <Card>
-        <Text style={styles.sectionTitle}>Timeline</Text>
-        <ComplaintTimeline entries={complaint.timeline ?? []} />
-      </Card>
-    </>
+          {slaCountdown ? (
+            <Animated.View
+              className={`flex-row items-center gap-3 rounded-xl border px-4 py-3 ${
+                isBreached ? 'border-danger-600 bg-danger-50' : 'border-warning-600 bg-warning-50'
+              }`}
+              entering={ZoomIn.delay(180).duration(260)}
+            >
+              {isBreached ? (
+                <AlertTriangle color={colors.danger} size={20} />
+              ) : (
+                <TimerReset color={colors.warning} size={20} />
+              )}
+              <Text
+                className={`flex-1 font-black ${
+                  isBreached ? 'text-danger-600' : 'text-warning-600'
+                }`}
+              >
+                {slaCountdown}
+              </Text>
+            </Animated.View>
+          ) : null}
+        </Card>
+      </AnimatedSection>
+
+      <AnimatedSection delay={160}>
+        <Card>
+          <SectionTitle
+            icon={<ImageIcon color={colors.primary} size={19} />}
+            title={t('complaints.attachments')}
+          />
+          {attachmentUris.length > 0 ? (
+            <View className="flex-row flex-wrap gap-2">
+              {attachmentUris.map((attachment, index) => (
+                <Animated.View
+                  className="aspect-square w-[31%] overflow-hidden rounded-xl border border-base-200 bg-base-50"
+                  entering={ZoomIn.delay(120 + index * 50).duration(240)}
+                  key={attachment.id}
+                >
+                  <Image
+                    className="h-full w-full"
+                    resizeMode="cover"
+                    source={{ uri: attachment.uri }}
+                  />
+                </Animated.View>
+              ))}
+            </View>
+          ) : (
+            <Text className="text-[15px] leading-[21px] text-base-500">
+              {t('complaints.noAttachments')}
+            </Text>
+          )}
+        </Card>
+      </AnimatedSection>
+
+      <AnimatedSection delay={240}>
+        <Card>
+          <SectionTitle
+            icon={<TimerReset color={colors.primary} size={19} />}
+            title={t('complaints.timeline')}
+          />
+          <ComplaintTimeline entries={complaint.timeline ?? []} />
+        </Card>
+      </AnimatedSection>
+    </View>
+  );
+}
+
+function AnimatedSection({ children, delay }: { children: ReactNode; delay: number }) {
+  return (
+    <Animated.View
+      entering={FadeIn.delay(delay).duration(240)}
+      layout={LinearTransition.duration(180)}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <View className="flex-row items-center gap-2">
+      <View className="h-9 w-9 items-center justify-center rounded-xl bg-primary-50">{icon}</View>
+      <Text className="text-lg font-black text-base-900">{title}</Text>
+    </View>
   );
 }
 
@@ -144,121 +284,21 @@ function DetailRow({
   markerColor,
   value,
 }: {
+  icon: ReactNode;
   label: string;
   value: string;
-  icon?: React.ReactNode;
   markerColor?: string;
 }) {
   return (
-    <View style={styles.detailRow}>
-      {icon}
-      {markerColor ? <View style={[styles.marker, { backgroundColor: markerColor }]} /> : null}
-      <View style={styles.detailText}>
-        <Text style={styles.detailLabel}>{label}</Text>
-        <Text style={styles.detailValue}>{value}</Text>
+    <View className="flex-row items-center gap-3 rounded-xl border border-base-200 bg-base-50 px-3 py-3">
+      <View className="h-9 w-9 items-center justify-center rounded-lg bg-white">{icon}</View>
+      {markerColor ? (
+        <View className="h-3 w-3 rounded-full" style={{ backgroundColor: markerColor }} />
+      ) : null}
+      <View className="flex-1 gap-0.5">
+        <Text className="text-xs font-extrabold text-base-500">{label}</Text>
+        <Text className="text-[15px] font-extrabold text-base-900">{value}</Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  attachment: {
-    aspectRatio: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    width: '30%',
-  },
-  complaintTitle: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 28,
-  },
-  description: {
-    color: colors.text,
-    fontSize: 16,
-    lineHeight: 23,
-  },
-  detailLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  detailRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  detailText: {
-    flex: 1,
-    gap: 2,
-  },
-  detailValue: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  gallery: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  marker: {
-    borderRadius: 5,
-    height: 10,
-    width: 10,
-  },
-  muted: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  reference: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: spacing.xs,
-  },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  slaBox: {
-    alignItems: 'center',
-    backgroundColor: colors.warningLight,
-    borderColor: '#FDE68A',
-    borderRadius: 8,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  slaBreached: {
-    backgroundColor: colors.dangerLight,
-    borderColor: colors.danger,
-  },
-  slaText: {
-    color: colors.warning,
-    flex: 1,
-    fontWeight: '900',
-  },
-  slaTextBreached: {
-    color: colors.danger,
-  },
-  titleRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'space-between',
-  },
-  titleWrap: {
-    flex: 1,
-  },
-});

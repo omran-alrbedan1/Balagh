@@ -1,24 +1,33 @@
-import { View, Text } from 'react-native';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { LockKeyhole, Mail } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
-import { Screen } from '@/components/layout/Screen';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ControlledInput } from '@/components/ui/ControlledInput';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { SubmitButton } from '@/components/ui/SubmitButton';
-import { Config } from '@/constants/config';
-import { loginSchema, LoginFormValues } from '@/features/auth/utils/validation';
 import { useLogin } from '@/features/auth/hooks/useLogin';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { getLoginSchema, LoginFormValues } from '@/features/auth/utils/validation';
 import { colors } from '@/theme/colors';
 
 export function LoginScreen() {
+  const { i18n, t } = useTranslation();
+  const loginSchema = useMemo(() => getLoginSchema(), [i18n.language]);
   const [flowError, setFlowError] = useState<string | null>(null);
   const setSession = useAuthStore((state) => state.setSession);
   const { control, handleSubmit } = useForm<LoginFormValues>({
@@ -46,9 +55,7 @@ export function LoginScreen() {
         }
 
         if (!result.data.user_id) {
-          setFlowError(
-            'Login succeeded, but the server did not return the user ID needed for OTP.',
-          );
+          setFlowError(t('auth.loginFlowMissingUser'));
           return;
         }
 
@@ -65,39 +72,133 @@ export function LoginScreen() {
   };
 
   return (
-    <Screen title="Welcome back">
-      <View>
-        <Text style={{ marginBottom: 16, color: '#475569' }}>Log in to continue.</Text>
-        {__DEV__ ? (
-          <Text style={{ marginBottom: 16, color: '#64748b', fontSize: 12 }}>
-            API: {Config.API_BASE_URL}
-          </Text>
-        ) : null}
-      </View>
-      <Card>
-        {requestError ? <ErrorState message={requestError} /> : null}
-        <ControlledInput
-          control={control}
-          name="login"
-          label="Email or phone"
-          leftIcon={<Mail color={colors.textMuted} size={20} />}
-          type="email"
-        />
-        <ControlledInput
-          control={control}
-          name="password"
-          label="Password"
-          leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-          type="password"
-        />
-        <SubmitButton
-          label="Log in"
-          handleSubmit={handleSubmit}
-          isSubmitting={loginMutation.isPending}
-          onSubmit={onSubmit}
-        />
-      </Card>
-      <Button label="Need an account? Register" variant="secondary" href="/(auth)/register" />
-    </Screen>
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: 32,
+            paddingTop: 20,
+            paddingBottom: 40,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="items-center mt-5 mb-8">
+            <View className="w-32 h-32 rounded-full bg-primary-50 justify-center items-center mb-3">
+              <Image
+                accessibilityIgnoresInvertColors
+                resizeMode="contain"
+                source={require('../../../../assets/logo.png')}
+                className="h-24 w-24"
+              />
+            </View>
+            <Text className="text-lg font-semibold text-base-900">{t('appName')}</Text>
+          </View>
+
+          <View className="items-center mb-8">
+            <Text className="text-3xl font-bold text-base-900 mb-1">{t('auth.loginTitle')}</Text>
+            <Text className="text-base text-base-500 font-normal">{t('auth.loginContinue')}</Text>
+          </View>
+
+          {requestError ? <ErrorState message={requestError} /> : null}
+
+          <View className="gap-5">
+            <View>
+              <ControlledInput
+                autoCapitalize="none"
+                control={control}
+                label={t('common.username')}
+                leftIcon={<Mail color={colors.textMuted} size={20} />}
+                name="login"
+                placeholder={t('auth.usernamePlaceholder')}
+                type="email"
+              />
+            </View>
+
+            <View>
+              <ControlledInput
+                autoCapitalize="none"
+                control={control}
+                label={t('common.password')}
+                leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+                name="password"
+                placeholder={t('auth.passwordPlaceholder')}
+                type="password"
+              />
+            </View>
+            <View>
+              <TouchableOpacity
+                activeOpacity={0.86}
+                accessibilityRole="button"
+                accessibilityState={{
+                  busy: loginMutation.isPending,
+                  disabled: loginMutation.isPending,
+                }}
+                disabled={loginMutation.isPending}
+                onPress={() => void handleSubmit(onSubmit)()}
+                style={[
+                  styles.submitButton,
+                  loginMutation.isPending ? styles.submitButtonDisabled : null,
+                ]}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loginMutation.isPending ? t('auth.signingIn') : t('auth.signIn')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row justify-center items-center">
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/(auth)/forgot-password')}
+              >
+                <Text className="text-sm font-semibold text-primary-600">
+                  {t('auth.forgotPassword')}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View className="flex-row justify-center items-center mt-2">
+              <Text className="text-sm text-base-500 font-normal">{t('auth.noAccount')} </Text>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/(auth)/register')}>
+                <Text className="text-sm font-semibold text-primary-600">{t('auth.signUp')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  submitButton: {
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    borderColor: '#2563EB',
+    borderWidth: 1,
+    borderRadius: 12,
+    elevation: 2,
+    justifyContent: 'center',
+    minHeight: 54,
+    shadowColor: '#1E40AF',
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    width: '100%',
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    writingDirection: 'auto',
+  },
+});

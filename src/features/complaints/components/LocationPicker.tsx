@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import { MapPin } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Input } from '@/components/ui/Input';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
@@ -9,6 +10,7 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function LocationPicker() {
+  const { t } = useTranslation();
   const location = useDraftComplaintStore((state) => state.location);
   const setLocation = useDraftComplaintStore((state) => state.setLocation);
   const [address, setAddress] = useState(location?.address ?? '');
@@ -58,14 +60,16 @@ export function LocationPicker() {
         ) : (
           <>
             <MapPin color="#FFFFFF" size={18} />
-            <Text style={styles.buttonText}>Use my current location</Text>
+            <Text style={styles.buttonText}>{t('complaints.useCurrentLocation')}</Text>
           </>
         )}
       </Pressable>
 
       {location ? (
         <View style={styles.locationCard}>
-          <Text style={styles.locationTitle}>{location.address ?? 'Location captured'}</Text>
+          <Text style={styles.locationTitle}>
+            {location.address ?? t('complaints.locationCaptured')}
+          </Text>
           <Text style={styles.locationMeta}>
             {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
           </Text>
@@ -74,16 +78,16 @@ export function LocationPicker() {
 
       {manualMode || !location ? (
         <View style={styles.manual}>
-          <Text style={styles.helper}>Or enter the address manually:</Text>
+          <Text style={styles.helper}>{t('complaints.locationHelper')}</Text>
           <Input
-            label="Address"
+            label={t('common.address')}
             onBlur={() => {
               if (address) {
                 setLocation({ lat: 0, lng: 0, address });
               }
             }}
             onChangeText={setAddress}
-            placeholder="Street, city, landmark..."
+            placeholder={t('complaints.addressPlaceholder')}
             value={address}
           />
         </View>

@@ -1,5 +1,7 @@
 import { Complaint, ComplaintTimelineEntry } from '@/api/types/complaint.types';
 import { ComplaintStatus } from '@/api/types/lookups.types';
+import { Config } from '@/constants/config';
+import i18next from '@/lib/i18n';
 import { colors } from '@/theme/colors';
 
 export type SortMode = 'newest' | 'oldest' | 'sla';
@@ -16,6 +18,10 @@ export const STATUS_LABELS: Record<ComplaintStatus, string> = {
   escalated: 'Escalated',
   submitted: 'Submitted',
 };
+
+export function getStatusLabel(status: ComplaintStatus) {
+  return i18next.t(`status.${status}`, { defaultValue: STATUS_LABELS[status] });
+}
 
 export const STATUS_TONES: Record<
   ComplaintStatus,
@@ -75,7 +81,7 @@ export const STATUS_TONES: Record<
 
 export function formatDate(value?: string) {
   if (!value) {
-    return 'Not available';
+    return i18next.t('common.notAvailable');
   }
 
   const date = new Date(value);
@@ -84,7 +90,7 @@ export function formatDate(value?: string) {
     return value;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(i18next.language, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -93,7 +99,7 @@ export function formatDate(value?: string) {
 
 export function formatDateTime(value?: string) {
   if (!value) {
-    return 'Not available';
+    return i18next.t('common.notAvailable');
   }
 
   const date = new Date(value);
@@ -102,7 +108,7 @@ export function formatDateTime(value?: string) {
     return value;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(i18next.language, {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
@@ -123,15 +129,17 @@ export function getSlaCountdown(slaDueAt?: string) {
 
   const diffMs = due - Date.now();
   const absHours = Math.ceil(Math.abs(diffMs) / 3_600_000);
-  const days = Math.floor(absHours / 24);
-  const hours = absHours % 24;
-  const short = days > 0 ? `${days}d ${hours}h` : `${hours}h`;
+  const short = formatHours(absHours);
 
-  return diffMs < 0 ? `SLA breached by ${short}` : `SLA due in ${short}`;
+  return diffMs < 0
+    ? i18next.t('time.slaBreachedBy', { time: short })
+    : i18next.t('time.slaDueIn', { time: short });
 }
 
 export function getPriorityLabel(complaint: Complaint) {
-  return complaint.priority?.name ?? complaint.priority_id ?? 'Priority pending';
+  return (
+    complaint.priority?.name ?? complaint.priority_id ?? i18next.t('complaints.priorityPending')
+  );
 }
 
 export function getDepartmentCategoryLabel(complaint: Complaint) {
@@ -142,7 +150,26 @@ export function getDepartmentCategoryLabel(complaint: Complaint) {
 }
 
 export function getAttachmentUri(attachment: Complaint['attachments'][number]) {
-  return attachment.url ?? attachment.uri;
+  const rawUri =
+    attachment.full_url ??
+    attachment.original_url ??
+    attachment.url ??
+    attachment.uri ??
+    attachment.file_path ??
+    attachment.path;
+
+  if (!rawUri) {
+    return undefined;
+  }
+
+  if (/^(https?:|file:|content:|data:)/i.test(rawUri)) {
+    return rawUri;
+  }
+
+  const apiRoot = Config.API_BASE_URL.replace(/\/api\/?.*$/i, '').replace(/\/$/, '');
+  const normalizedPath = rawUri.startsWith('/') ? rawUri : `/${rawUri}`;
+
+  return `${apiRoot}${normalizedPath}`;
 }
 
 export function sortTimeline(entries: ComplaintTimelineEntry[]) {
@@ -160,7 +187,7 @@ export function formatDurationBetween(
   }
 
   if (!next) {
-    return 'Current status';
+    return i18next.t('time.currentStatus');
   }
 
   const start = new Date(entry.created_at).getTime();
@@ -175,7 +202,7 @@ export function formatDurationBetween(
 
 function formatHours(totalHours: number) {
   if (totalHours < 1) {
-    return 'Less than 1 hour';
+    return i18next.t('time.lessThanHour');
   }
 
   const rounded = Math.round(totalHours);
@@ -183,8 +210,10 @@ function formatHours(totalHours: number) {
   const hours = rounded % 24;
 
   if (days === 0) {
-    return `${hours}h`;
+    return i18next.t('time.hours', { hours });
   }
 
-  return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  return hours > 0
+    ? i18next.t('time.daysHours', { days, hours })
+    : i18next.t('time.daysOnly', { days });
 }

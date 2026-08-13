@@ -1,28 +1,33 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import '../global.css';
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useLanguageStore } from '@/features/settings/store/languageStore';
 import { AppProviders } from '@/lib/AppProviders';
 
 void SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
+  const { t } = useTranslation();
   const hydrate = useAuthStore((state) => state.hydrate);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const token = useAuthStore((state) => state.token);
+  const hydrateLanguage = useLanguageStore((state) => state.hydrate);
+  const isLanguageHydrated = useLanguageStore((state) => state.isHydrated);
 
   useEffect(() => {
-    hydrate().finally(() => {
+    Promise.all([hydrate(), hydrateLanguage()]).finally(() => {
       void SplashScreen.hideAsync();
     });
-  }, [hydrate]);
+  }, [hydrate, hydrateLanguage]);
 
-  if (!isHydrated) {
-    return <LoadingSpinner label="Starting Balagh" />;
+  if (!isHydrated || !isLanguageHydrated) {
+    return <LoadingSpinner label={`${t('common.loading')} ${t('appName')}`} />;
   }
 
   return (

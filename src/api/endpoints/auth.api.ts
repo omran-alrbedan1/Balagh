@@ -1,14 +1,25 @@
 import { apiClient } from '@/api/client';
 import { ApiEnvelope } from '@/api/types/api-envelope.types';
+import { DeviceTokenPayload } from '@/api/types/device.types';
 import {
   AuthSessionResponse,
   AuthUser,
+  ChangePasswordPayload,
+  ForgotPasswordPayload,
   LoginPayload,
   LoginResponse,
   PendingOtpResponse,
   RegisterPayload,
+  ResetPasswordPayload,
+  ResendOtpPayload,
   VerifyOtpPayload,
 } from '@/api/types/auth.types';
+
+type AuthUserResponse = AuthUser | { user: AuthUser };
+
+export function extractAuthUser(data: AuthUserResponse) {
+  return 'user' in data ? data.user : data;
+}
 
 export async function register(payload: RegisterPayload) {
   const response = await apiClient.post<ApiEnvelope<PendingOtpResponse>>('/auth/register', payload);
@@ -29,11 +40,48 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
 }
 
 export async function me() {
-  const response = await apiClient.get<ApiEnvelope<AuthUser>>('/auth/me');
-  return response.data;
+  const response = await apiClient.get<ApiEnvelope<AuthUserResponse>>('/auth/me');
+
+  return {
+    ...response.data,
+    data: extractAuthUser(response.data.data),
+  };
 }
 
 export async function logout() {
   const response = await apiClient.post<ApiEnvelope<null>>('/auth/logout');
+  return response.data;
+}
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const response = await apiClient.post<ApiEnvelope<null>>('/auth/change-password', payload);
+  return response.data;
+}
+
+export async function forgotPassword(payload: ForgotPasswordPayload) {
+  const response = await apiClient.post<ApiEnvelope<null>>('/auth/forgot-password', payload);
+  return response.data;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  const response = await apiClient.post<ApiEnvelope<null>>('/auth/reset-password', payload);
+  return response.data;
+}
+
+export async function resendOtp(payload: ResendOtpPayload) {
+  const response = await apiClient.post<ApiEnvelope<PendingOtpResponse>>(
+    '/auth/resend-otp',
+    payload,
+  );
+  return response.data;
+}
+
+export async function logoutAll() {
+  const response = await apiClient.post<ApiEnvelope<null>>('/auth/logout-all');
+  return response.data;
+}
+
+export async function registerDeviceToken(payload: DeviceTokenPayload) {
+  const response = await apiClient.post<ApiEnvelope<null>>('/device-tokens', payload);
   return response.data;
 }

@@ -1,44 +1,28 @@
 import { FlashList } from '@shopify/flash-list';
 import { ClipboardCheck, PlusCircle, RefreshCw } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { RefreshControl, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { extractComplaints } from '@/api/endpoints/complaints.api';
 import { Complaint } from '@/api/types/complaint.types';
-import { ComplaintStatus } from '@/api/types/lookups.types';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ComplaintCard } from '@/features/complaints/components/ComplaintCard';
+import {
+  ComplaintFilters,
+  ComplaintStatusFilter,
+} from '@/features/complaints/components/ComplaintFilters';
 import { useComplaints } from '@/features/complaints/hooks/useComplaints';
-import { SortMode, STATUS_LABELS } from '@/features/complaints/utils/complaintDisplay';
+import { SortMode } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { typography } from '@/theme/typography';
-
-const STATUS_FILTERS: ('all' | ComplaintStatus)[] = [
-  'all',
-  'submitted',
-  'under_review',
-  'assigned',
-  'in_progress',
-  'waiting_citizen',
-  'resolved',
-  'rejected',
-  'closed',
-  'escalated',
-];
-
-const SORT_OPTIONS: { label: string; value: SortMode }[] = [
-  { label: 'Newest', value: 'newest' },
-  { label: 'Oldest', value: 'oldest' },
-  { label: 'SLA', value: 'sla' },
-];
 
 export default function MyComplaintsScreen() {
-  const [status, setStatus] = useState<'all' | ComplaintStatus>('all');
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<ComplaintStatusFilter>('all');
   const [sort, setSort] = useState<SortMode>('newest');
   const complaintsQuery = useComplaints({ sort, status });
   const rawComplaints = useMemo(
@@ -56,68 +40,43 @@ export default function MyComplaintsScreen() {
   }, [rawComplaints, sort, status]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View style={styles.headerRule} />
-        <Text style={styles.title}>My Complaints</Text>
-        <Text style={styles.subtitle}>
-          Follow submitted complaints, updates, and resolution status.
-        </Text>
-      </View>
+    <View className="flex-1 bg-surface-light">
+      <PageHeader subtitle={t('complaints.listSubtitle')} title={t('complaints.listTitle')} />
 
-      <View style={styles.controls}>
-        <FlashList
-          data={STATUS_FILTERS}
-          horizontal
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <FilterChip
-              active={item === status}
-              label={item === 'all' ? 'All' : STATUS_LABELS[item]}
-              onPress={() => setStatus(item)}
-            />
-          )}
-          showsHorizontalScrollIndicator={false}
-        />
-        <View style={styles.sortRow}>
-          {SORT_OPTIONS.map((option) => (
-            <FilterChip
-              active={option.value === sort}
-              key={option.value}
-              label={option.label}
-              onPress={() => setSort(option.value)}
-            />
-          ))}
-        </View>
-      </View>
+      <ComplaintFilters
+        onSortChange={setSort}
+        onStatusChange={setStatus}
+        sort={sort}
+        status={status}
+      />
 
       {complaintsQuery.isLoading ? (
-        <LoadingSpinner label="Loading complaints" />
+        <LoadingSpinner label={t('complaints.listLoading')} />
       ) : complaintsQuery.error ? (
-        <View style={styles.stateWrap}>
+        <View className="gap-4 px-6 pt-6">
           <ErrorState message={complaintsQuery.error.message} />
           <Button
-            label="Try again"
+            label={t('common.tryAgain')}
             iconLeft={<RefreshCw color="#FFFFFF" size={18} />}
             onPress={() => void complaintsQuery.refetch()}
           />
         </View>
       ) : (
         <FlashList
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 24 }}
           data={complaints}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <View style={styles.stateWrap}>
+            <View className="gap-4 pt-6">
               <EmptyState
                 icon={ClipboardCheck}
-                title="Nothing filed yet"
-                message="Complaints you submit will appear here with live status and SLA tracking."
+                title={t('complaints.listEmptyTitle')}
+                message={t('complaints.listEmptyMessage')}
               />
               <Button
                 href="/(app)/(tabs)/complaints/new"
                 iconLeft={<PlusCircle color="#FFFFFF" size={19} />}
-                label="File your first complaint"
+                label={t('complaints.fileFirst')}
               />
             </View>
           }
@@ -128,32 +87,11 @@ export default function MyComplaintsScreen() {
               tintColor={colors.primary}
             />
           }
-          renderItem={({ item }) => <ComplaintCard complaint={item} />}
+          renderItem={({ index, item }) => <ComplaintCard complaint={item} index={index} />}
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
-  );
-}
-
-function FilterChip({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={[styles.chip, active ? styles.chipActive : null]}
-    >
-      <Text style={[styles.chipText, active ? styles.chipTextActive : null]}>{label}</Text>
-    </Pressable>
+    </View>
   );
 }
 
@@ -177,70 +115,3 @@ function dateValue(value?: string) {
   const date = new Date(value).getTime();
   return Number.isNaN(date) ? Number.MAX_SAFE_INTEGER : date;
 }
-
-const styles = StyleSheet.create({
-  chip: {
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-    minHeight: 38,
-    paddingHorizontal: spacing.md,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-  },
-  controls: {
-    gap: spacing.sm,
-    paddingBottom: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  header: {
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs,
-  },
-  headerRule: {
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    height: 4,
-    width: 42,
-  },
-  listContent: {
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-  safeArea: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  sortRow: {
-    flexDirection: 'row',
-  },
-  stateWrap: {
-    gap: spacing.md,
-    paddingTop: spacing.lg,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: typography.body,
-    lineHeight: 22,
-  },
-  title: {
-    color: colors.text,
-    fontSize: typography.heading,
-    fontWeight: '900',
-  },
-});

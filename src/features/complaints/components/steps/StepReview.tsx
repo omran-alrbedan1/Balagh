@@ -1,17 +1,18 @@
 import { router } from 'expo-router';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { SubmitButton } from '@/components/ui/SubmitButton';
+import { StepBackButton } from '@/features/complaints/components/StepBackButton';
 import { useCreateComplaint } from '@/features/complaints/hooks/useCreateComplaint';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import { useCategories } from '@/features/lookups/hooks/useCategories';
 import { useDepartments } from '@/features/lookups/hooks/useDepartments';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 export function StepReview({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
   const draft = useDraftComplaintStore();
   const { data: departments } = useDepartments();
   const { data: categories } = useCategories(draft.departmentId);
@@ -43,10 +44,12 @@ export function StepReview({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="gap-4">
       <View>
-        <Text style={styles.title}>Review and submit</Text>
-        <Text style={styles.subtitle}>Double-check the details before submitting.</Text>
+        <Text className="text-[22px] font-black text-base-900">{t('complaints.reviewSubmit')}</Text>
+        <Text className="text-[15px] leading-[21px] text-base-500">
+          {t('complaints.reviewSubmitSubtitle')}
+        </Text>
       </View>
 
       {createComplaintMutation.error ? (
@@ -54,94 +57,56 @@ export function StepReview({ onBack }: { onBack: () => void }) {
       ) : null}
 
       <Card>
-        <Text style={styles.label}>DEPARTMENT / CATEGORY</Text>
-        <Text style={styles.value}>
-          {departmentName} to {categoryName}
+        <Text className="text-xs font-black text-base-500">
+          {t('complaintReview.departmentCategory')}
+        </Text>
+        <Text className="mt-1 text-base font-extrabold text-base-900">
+          {t('complaintReview.to', { department: departmentName, category: categoryName })}
         </Text>
       </Card>
 
       <Card>
-        <Text style={styles.label}>TITLE</Text>
-        <Text style={styles.value}>{draft.title}</Text>
-        <Text style={[styles.label, styles.stackedLabel]}>DESCRIPTION</Text>
-        <Text style={styles.body}>{draft.description}</Text>
+        <Text className="text-xs font-black text-base-500">{t('complaintReview.title')}</Text>
+        <Text className="mt-1 text-base font-extrabold text-base-900">{draft.title}</Text>
+        <Text className="mt-4 text-xs font-black text-base-500">
+          {t('complaintReview.description')}
+        </Text>
+        <Text className="text-[15px] leading-[21px] text-base-900">{draft.description}</Text>
       </Card>
 
       {draft.attachments.length > 0 ? (
         <Card>
-          <Text style={styles.label}>PHOTOS ({draft.attachments.length})</Text>
-          <View style={styles.photos}>
+          <Text className="text-xs font-black text-base-500">
+            {t('complaints.photos', { count: draft.attachments.length })}
+          </Text>
+          <View className="mt-2 flex-row flex-wrap gap-2">
             {draft.attachments.map((attachment) => (
-              <Image key={attachment.id} source={{ uri: attachment.uri }} style={styles.photo} />
+              <Image
+                className="h-[68px] w-[68px] rounded-lg"
+                key={attachment.id}
+                source={{ uri: attachment.uri }}
+              />
             ))}
           </View>
         </Card>
       ) : null}
 
       <Card>
-        <Text style={styles.label}>LOCATION</Text>
-        <Text style={styles.value}>{draft.location?.address ?? 'Not provided'}</Text>
+        <Text className="text-xs font-black text-base-500">{t('complaintReview.location')}</Text>
+        <Text className="mt-1 text-base font-extrabold text-base-900">
+          {draft.location?.address ?? t('common.notProvided')}
+        </Text>
       </Card>
 
-      <View style={styles.actions}>
-        <Button fullWidth={false} label="Back" onPress={onBack} variant="secondary" />
-        <Button
+      <View className="flex-row gap-4">
+        <StepBackButton label={t('common.back')} onPress={onBack} />
+        <SubmitButton
           fullWidth={false}
-          label="Submit Complaint"
-          loading={createComplaintMutation.isPending}
+          isSubmitting={createComplaintMutation.isPending}
+          label={t('complaints.submitComplaint')}
           onPress={handleSubmit}
         />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  body: {
-    color: colors.text,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  container: {
-    gap: spacing.md,
-  },
-  label: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  photo: {
-    borderRadius: 8,
-    height: 68,
-    width: 68,
-  },
-  photos: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  stackedLabel: {
-    marginTop: spacing.md,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  value: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-    marginTop: spacing.xs,
-  },
-});

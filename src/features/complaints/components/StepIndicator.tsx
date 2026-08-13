@@ -1,103 +1,80 @@
 import { Check } from 'lucide-react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-
-const STEPS = ['Category', 'Details', 'Photos', 'Location', 'Review'];
+const STEPS = ['category', 'details', 'photos', 'location', 'review'] as const;
 
 export function StepIndicator({ current }: { current: number }) {
+  const { t } = useTranslation();
+
   return (
-    <View style={styles.container}>
+    <View className="flex-row justify-between pt-1">
       {STEPS.map((label, index) => {
         const stepNumber = index + 1;
         const isActive = stepNumber === current;
         const isDone = stepNumber < current;
 
         return (
-          <View key={label} style={styles.step}>
-            {index > 0 ? (
-              <View style={[styles.rail, isDone || isActive ? styles.railActive : null]} />
-            ) : null}
-            <View
-              style={[styles.badge, isActive ? styles.active : null, isDone ? styles.done : null]}
-            >
-              {isDone ? (
-                <Check color="#FFFFFF" size={15} />
-              ) : (
-                <Text style={[styles.badgeText, isActive ? styles.activeText : null]}>
-                  {stepNumber}
-                </Text>
-              )}
+          <Animated.View
+            className="flex-1 items-center"
+            entering={FadeIn.delay(index * 55).duration(220)}
+            key={label}
+            layout={LinearTransition.springify().damping(18)}
+          >
+            <View className="w-full flex-row items-center">
+              <View
+                className={`mr-1 h-0.5 flex-1 ${
+                  index === 0 ? 'opacity-0' : isDone || isActive ? 'bg-primary-600' : 'bg-base-200'
+                }`}
+              />
+
+              <Animated.View
+                className={`z-10 h-12 w-12 items-center justify-center rounded-full border ${
+                  isDone
+                    ? 'border-primary-600 bg-primary-600'
+                    : isActive
+                      ? 'border-2 border-primary-600 bg-primary-50'
+                      : 'border-base-200 bg-surface'
+                }`}
+              >
+                {isDone ? (
+                  <Check color="#FFFFFF" size={15} />
+                ) : (
+                  <Text
+                    className={`text-xs font-black ${
+                      isActive ? 'text-primary-600' : 'text-primary-600'
+                    }`}
+                  >
+                    {stepNumber}
+                  </Text>
+                )}
+              </Animated.View>
+
+              <View
+                className={`ml-1 h-0.5 flex-1 ${
+                  index === STEPS.length - 1
+                    ? 'opacity-0'
+                    : stepNumber < current
+                      ? 'bg-primary-600'
+                      : 'bg-base-200'
+                }`}
+              />
             </View>
-            <Text style={[styles.label, isActive ? styles.activeLabel : null]} numberOfLines={1}>
-              {label}
-            </Text>
-          </View>
+
+            <Animated.Text
+              className={`mt-1 text-center text-[10px] ${
+                isActive ? 'font-extrabold text-primary-600' : 'text-base-500'
+              }`}
+              entering={ZoomIn.delay(index * 55).duration(220)}
+              layout={LinearTransition.duration(180)}
+              numberOfLines={1}
+            >
+              {t(`steps.${label}`)}
+            </Animated.Text>
+          </Animated.View>
         );
       })}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  active: {
-    backgroundColor: colors.primarySoft,
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  activeLabel: {
-    color: colors.primary,
-    fontWeight: '800',
-  },
-  activeText: {
-    color: colors.primary,
-  },
-  badge: {
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: 16,
-    borderWidth: 1,
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
-  },
-  badgeText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  container: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'space-between',
-    paddingTop: spacing.xs,
-  },
-  done: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  label: {
-    color: colors.textMuted,
-    fontSize: 10,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-  rail: {
-    backgroundColor: colors.border,
-    height: 2,
-    left: '-50%',
-    position: 'absolute',
-    right: '50%',
-    top: 16,
-  },
-  railActive: {
-    backgroundColor: colors.primary,
-  },
-  step: {
-    alignItems: 'center',
-    flex: 1,
-    position: 'relative',
-  },
-});

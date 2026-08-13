@@ -2,6 +2,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, ImagePlus, X } from 'lucide-react-native';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import { colors } from '@/theme/colors';
@@ -19,6 +20,7 @@ async function compressImage(uri: string) {
 }
 
 export function AttachmentPicker() {
+  const { t } = useTranslation();
   const attachments = useDraftComplaintStore((state) => state.attachments);
   const addAttachment = useDraftComplaintStore((state) => state.addAttachment);
   const removeAttachment = useDraftComplaintStore((state) => state.removeAttachment);
@@ -26,7 +28,10 @@ export function AttachmentPicker() {
 
   const handlePick = async (source: 'camera' | 'gallery') => {
     if (!canAddMore) {
-      Alert.alert('Limit reached', `You can attach up to ${MAX_ATTACHMENTS} photos.`);
+      Alert.alert(
+        t('permissions.limitReached'),
+        t('permissions.photoLimit', { max: MAX_ATTACHMENTS }),
+      );
       return;
     }
 
@@ -37,8 +42,10 @@ export function AttachmentPicker() {
 
     if (!permission.granted) {
       Alert.alert(
-        'Permission needed',
-        `Please allow ${source === 'camera' ? 'camera' : 'photo library'} access to attach a photo.`,
+        t('permissions.permissionNeeded'),
+        t('permissions.photoAccess', {
+          source: source === 'camera' ? t('permissions.camera') : t('permissions.photoLibrary'),
+        }),
       );
       return;
     }
@@ -66,11 +73,11 @@ export function AttachmentPicker() {
       <View style={styles.actions}>
         <Pressable onPress={() => void handlePick('camera')} style={styles.pickButton}>
           <Camera color={colors.primary} size={18} />
-          <Text style={styles.pickText}>Camera</Text>
+          <Text style={styles.pickText}>{t('complaints.camera')}</Text>
         </Pressable>
         <Pressable onPress={() => void handlePick('gallery')} style={styles.pickButton}>
           <ImagePlus color={colors.primary} size={18} />
-          <Text style={styles.pickText}>Gallery</Text>
+          <Text style={styles.pickText}>{t('complaints.gallery')}</Text>
         </Pressable>
       </View>
 
@@ -79,7 +86,7 @@ export function AttachmentPicker() {
           <View key={attachment.id} style={styles.thumbnailWrap}>
             <Image source={{ uri: attachment.uri }} style={styles.thumbnail} />
             <Pressable
-              accessibilityLabel="Remove photo"
+              accessibilityLabel={t('complaints.removePhoto')}
               accessibilityRole="button"
               onPress={() => removeAttachment(attachment.id)}
               style={styles.removeButton}
@@ -91,7 +98,7 @@ export function AttachmentPicker() {
       </View>
 
       <Text style={styles.caption}>
-        {attachments.length}/{MAX_ATTACHMENTS} photos attached (optional but recommended)
+        {t('complaints.photoCaption', { count: attachments.length, max: MAX_ATTACHMENTS })}
       </Text>
     </View>
   );

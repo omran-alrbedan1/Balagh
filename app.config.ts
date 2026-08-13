@@ -35,7 +35,8 @@ export default ({ config }: ConfigContext): ExpoConfig =>
       adaptiveIcon: {
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
-        backgroundColor: '#E6F4FE',
+        monochromeImage: './assets/android-icon-monochrome.png',
+        backgroundColor: '#EFF6FF',
       },
     },
     scheme: 'balagh',

@@ -7,7 +7,7 @@ import { colors } from '@/theme/colors';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 58 + Math.max(insets.bottom, 8);
+  const tabBarHeight = 70 + Math.max(insets.bottom, 8);
 
   return (
     <Tabs
@@ -17,7 +17,8 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarHideOnKeyboard: true,
         tabBarItemStyle: styles.tabItem,
-        tabBarShowLabel: false,
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarShowLabel: true,
         tabBarStyle: [
           styles.tabBar,
           {
@@ -37,6 +38,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="complaints/index"
         options={{
+          title: 'My Complaints',
           tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />,
         }}
       />
@@ -90,7 +92,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     elevation: 14,
     paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingTop: 7,
     shadowColor: colors.shadow,
     shadowOffset: { height: -8, width: 0 },
     shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0.16,
@@ -99,6 +101,12 @@ const styles = StyleSheet.create({
   tabItem: {
     borderRadius: 14,
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 2,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0,
+    marginTop: 1,
   },
 });

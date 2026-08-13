@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Clock3, FilePlus2, Inbox, ShieldCheck } from 'lucide-react-native';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
@@ -12,13 +13,14 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { data: stats, isLoading, isRefetching, refetch } = useHomeStats();
 
   return (
     <Screen
-      subtitle="Track service requests and file new issues from one place."
-      title="Home"
+      subtitle={t('home.subtitle')}
+      title={t('home.title')}
       refreshControl={
         <RefreshControl
           onRefresh={() => void refetch()}
@@ -32,22 +34,22 @@ export default function HomeScreen() {
           <ShieldCheck color={colors.primary} size={24} />
         </View>
         <View style={styles.heroText}>
-          <Text style={styles.welcome}>Welcome back</Text>
-          <Text style={styles.name}>{user?.name ?? 'Citizen'}</Text>
+          <Text style={styles.welcome}>{t('home.welcome')}</Text>
+          <Text style={styles.name}>{user?.name ?? t('home.citizen')}</Text>
         </View>
       </View>
 
       <View style={styles.statsGrid}>
         <Card style={styles.statCard}>
           <View style={styles.statHeader}>
-            <Text style={styles.statLabel}>OPEN COMPLAINTS</Text>
+            <Text style={styles.statLabel}>{t('home.openComplaints')}</Text>
             <FilePlus2 color={colors.primary} size={18} />
           </View>
           <Text style={styles.statValue}>{isLoading ? '-' : (stats?.openComplaints ?? 0)}</Text>
         </Card>
         <Card style={styles.statCard}>
           <View style={styles.statHeader}>
-            <Text style={styles.statLabel}>PENDING SLA</Text>
+            <Text style={styles.statLabel}>{t('home.pendingSla')}</Text>
             <Clock3 color={colors.warning} size={18} />
           </View>
           <Text style={styles.statValue}>{isLoading ? '-' : (stats?.pendingSla ?? 0)}</Text>
@@ -55,18 +57,18 @@ export default function HomeScreen() {
       </View>
 
       <Button
-        label="File a New Complaint"
+        label={t('home.newComplaint')}
         iconLeft={<FilePlus2 color="#FFFFFF" size={19} />}
         onPress={() => router.push('/(app)/(tabs)/complaints/new')}
       />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent activity</Text>
+        <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
         {!isLoading && (!stats?.recentActivity || stats.recentActivity.length === 0) ? (
           <EmptyState
             icon={Inbox}
-            title="No complaints yet"
-            message="Once you file a complaint, its latest updates will show up here."
+            title={t('home.noComplaintsTitle')}
+            message={t('home.noComplaintsMessage')}
           />
         ) : (
           stats?.recentActivity.map((item) => (

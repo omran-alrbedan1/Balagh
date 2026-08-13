@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { router } from 'expo-router';
 
 import { Config } from '@/constants/config';
+import i18next from '@/lib/i18n';
 import { clearSession, getToken } from '@/lib/secureStorage';
 
 export class ApiError extends Error {
@@ -50,6 +51,9 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (request) => {
   const token = await getToken();
+  const language = i18next.language?.startsWith('ar') ? 'ar' : 'en';
+
+  request.headers['Accept-Language'] = language;
 
   if (token) {
     request.headers.Authorization = `Bearer ${token}`;

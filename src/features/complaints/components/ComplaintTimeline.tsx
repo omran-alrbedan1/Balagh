@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react-native';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { ComplaintTimelineEntry } from '@/api/types/complaint.types';
 import { StatusBadge } from '@/features/complaints/components/StatusBadge';
@@ -16,13 +17,14 @@ interface ComplaintTimelineProps {
 }
 
 export function ComplaintTimeline({ entries }: ComplaintTimelineProps) {
+  const { t } = useTranslation();
   const timeline = sortTimeline(entries);
 
   if (timeline.length === 0) {
     return (
       <View style={styles.emptyTimeline}>
-        <Text style={styles.emptyTitle}>No timeline yet</Text>
-        <Text style={styles.emptyMessage}>Status changes will appear here as the case moves.</Text>
+        <Text style={styles.emptyTitle}>{t('complaints.timelineEmptyTitle')}</Text>
+        <Text style={styles.emptyMessage}>{t('complaints.timelineEmptyMessage')}</Text>
       </View>
     );
   }
@@ -45,13 +47,15 @@ export function ComplaintTimeline({ entries }: ComplaintTimelineProps) {
             <View style={[styles.content, isCurrent ? styles.currentContent : null]}>
               <View style={styles.row}>
                 <StatusBadge status={entry.to_status ?? entry.status} />
-                {isCurrent ? <Text style={styles.currentLabel}>Current</Text> : null}
+                {isCurrent ? <Text style={styles.currentLabel}>{t('common.current')}</Text> : null}
               </View>
               <Text style={styles.date}>{formatDateTime(entry.created_at)}</Text>
               {entry.note ? <Text style={styles.note}>{entry.note}</Text> : null}
               {entry.changed_by_user?.name || entry.changed_by ? (
                 <Text style={styles.meta}>
-                  By {entry.changed_by_user?.name ?? entry.changed_by}
+                  {t('complaints.timelineBy', {
+                    name: entry.changed_by_user?.name ?? entry.changed_by,
+                  })}
                 </Text>
               ) : null}
               <Text style={styles.duration}>{formatDurationBetween(entry, next)}</Text>

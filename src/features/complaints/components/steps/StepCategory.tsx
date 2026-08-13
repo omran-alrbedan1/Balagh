@@ -1,13 +1,16 @@
+import { Tags } from 'lucide-react-native';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/Button';
+import { SubmitButton } from '@/components/ui/SubmitButton';
+import { StepHeader } from '@/features/complaints/components/StepHeader';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import { DepartmentCategoryPicker } from '@/features/lookups/components/DepartmentCategoryPicker';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 export function StepCategory({ onNext }: { onNext: () => void }) {
+  const { t } = useTranslation();
   const departmentId = useDraftComplaintStore((state) => state.departmentId);
   const categoryId = useDraftComplaintStore((state) => state.categoryId);
   const setDepartment = useDraftComplaintStore((state) => state.setDepartment);
@@ -16,27 +19,28 @@ export function StepCategory({ onNext }: { onNext: () => void }) {
   const canContinue = Boolean(departmentId && categoryId);
 
   return (
-    <View style={styles.container}>
-      <View>
-        <Text style={styles.title}>What is this about?</Text>
-        <Text style={styles.subtitle}>
-          Choose the department and category that best matches your issue.
-        </Text>
-      </View>
+    <View className="gap-6">
+      <StepHeader
+        icon={<Tags color={colors.primary} size={24} />}
+        subtitle={t('complaints.selectStepSubtitle')}
+        title={t('complaints.selectStepTitle')}
+      />
 
       <DepartmentCategoryPicker
         categoryError={
-          touched && departmentId && !categoryId ? 'Please choose a category.' : undefined
+          touched && departmentId && !categoryId ? t('complaints.selectCategoryError') : undefined
         }
         categoryId={categoryId}
-        departmentError={touched && !departmentId ? 'Please choose a department.' : undefined}
+        departmentError={
+          touched && !departmentId ? t('complaints.selectDepartmentError') : undefined
+        }
         departmentId={departmentId}
         onCategoryChange={setCategory}
         onDepartmentChange={setDepartment}
       />
 
-      <Button
-        label="Continue"
+      <SubmitButton
+        label={t('common.continue')}
         onPress={() => {
           setTouched(true);
           if (canContinue) {
@@ -47,19 +51,3 @@ export function StepCategory({ onNext }: { onNext: () => void }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.lg,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-});

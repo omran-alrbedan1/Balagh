@@ -1,167 +1,143 @@
 import { router } from 'expo-router';
-import { AlertTriangle, CalendarDays, ChevronRight, Clock3 } from 'lucide-react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  AlertTriangle,
+  CalendarDays,
+  ChevronRight,
+  Clock3,
+  Flag,
+  MapPin,
+} from 'lucide-react-native';
+import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
 
 import { Complaint } from '@/api/types/complaint.types';
-import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/features/complaints/components/StatusBadge';
 import {
   formatDate,
+  getDepartmentCategoryLabel,
   getPriorityLabel,
   getSlaCountdown,
 } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 interface ComplaintCardProps {
   complaint: Complaint;
+  index?: number;
 }
 
-export function ComplaintCard({ complaint }: ComplaintCardProps) {
+export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
+  const { t } = useTranslation();
   const slaCountdown = getSlaCountdown(complaint.sla_due_at);
   const isBreached = slaCountdown?.includes('breached') || complaint.sla_status === 'breached';
   const priorityColor = complaint.priority?.color ?? colors.primary;
+  const location = complaint.location?.address;
+  const categoryLabel = getDepartmentCategoryLabel(complaint);
 
   return (
-    <Pressable
-      accessibilityLabel={`Open complaint ${complaint.title}`}
-      accessibilityRole="button"
-      onPress={() =>
-        router.push({
-          pathname: '/(app)/(tabs)/complaints/[id]',
-          params: { id: complaint.id },
-        })
-      }
-      style={({ pressed }) => [styles.pressable, pressed ? styles.pressed : null]}
+    <Animated.View
+      entering={FadeIn.delay(index * 70).duration(260)}
+      layout={LinearTransition.duration(180)}
     >
-      <Card style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.titleWrap}>
-            <Text numberOfLines={2} style={styles.title}>
-              {complaint.title}
-            </Text>
-            <View style={styles.metaRow}>
-              <CalendarDays color={colors.textMuted} size={14} />
-              <Text style={styles.meta}>{formatDate(complaint.created_at)}</Text>
+      <Pressable
+        accessibilityLabel={t('home.openComplaint', { title: complaint.title })}
+        accessibilityRole="button"
+        className="mb-4 active:opacity-85"
+        onPress={() =>
+          router.push({
+            pathname: '/(app)/(tabs)/complaints/[id]',
+            params: { id: complaint.id },
+          })
+        }
+      >
+        <View className="rounded-2xl border-2 border-primary-100 bg-white shadow-md shadow-base-900/10">
+          <View className="gap-4 p-4">
+            <View className="flex-row items-start gap-3">
+              <Animated.View
+                className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50"
+                entering={ZoomIn.delay(index * 70 + 80).duration(220)}
+              >
+                <Flag color={priorityColor} size={20} />
+              </Animated.View>
+
+              <View className="flex-1 gap-2">
+                <View className="flex-row items-start justify-between gap-2">
+                  <Text
+                    className="flex-1 text-[17px] font-black leading-[23px] text-base-900"
+                    numberOfLines={2}
+                  >
+                    {complaint.title}
+                  </Text>
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-base-50">
+                    <ChevronRight color={colors.textMuted} size={19} />
+                  </View>
+                </View>
+
+                {categoryLabel ? (
+                  <Text className="text-[13px] font-bold text-base-500" numberOfLines={1}>
+                    {categoryLabel}
+                  </Text>
+                ) : null}
+              </View>
             </View>
-          </View>
-          <ChevronRight color={colors.textMuted} size={20} />
-        </View>
 
-        <View style={styles.footer}>
-          <StatusBadge status={complaint.status} />
-          <View style={styles.priorityPill}>
-            <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
-            <Text numberOfLines={1} style={styles.priorityText}>
-              {getPriorityLabel(complaint)}
-            </Text>
+            <View className="flex-row flex-wrap items-center gap-2">
+              <StatusBadge status={complaint.status} />
+              <View className="flex-row items-center gap-1.5 rounded-full border border-base-200 bg-base-50 px-3 py-1.5">
+                <View
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: priorityColor }}
+                />
+                <Text className="text-xs font-extrabold text-base-900" numberOfLines={1}>
+                  {getPriorityLabel(complaint)}
+                </Text>
+              </View>
+            </View>
+
+            <View className="gap-2">
+              <MetaRow
+                icon={<CalendarDays color={colors.textMuted} size={15} />}
+                text={formatDate(complaint.created_at)}
+              />
+              {location ? (
+                <MetaRow icon={<MapPin color={colors.textMuted} size={15} />} text={location} />
+              ) : null}
+            </View>
+
+            {slaCountdown ? (
+              <View
+                className={`flex-row items-center gap-2 rounded-xl border px-3 py-2 ${
+                  isBreached ? 'border-danger-600 bg-danger-50' : 'border-warning-600 bg-warning-50'
+                }`}
+              >
+                {isBreached ? (
+                  <AlertTriangle color={colors.danger} size={16} />
+                ) : (
+                  <Clock3 color={colors.warning} size={16} />
+                )}
+                <Text
+                  className={`flex-1 text-xs font-black ${
+                    isBreached ? 'text-danger-600' : 'text-warning-600'
+                  }`}
+                >
+                  {slaCountdown}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
-
-        {slaCountdown ? (
-          <View style={[styles.slaRow, isBreached ? styles.slaBreached : null]}>
-            {isBreached ? (
-              <AlertTriangle color={colors.danger} size={15} />
-            ) : (
-              <Clock3 color={colors.warning} size={15} />
-            )}
-            <Text style={[styles.slaText, isBreached ? styles.slaTextBreached : null]}>
-              {slaCountdown}
-            </Text>
-          </View>
-        ) : null}
-      </Card>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing.sm,
-  },
-  footer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  meta: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.995 }],
-  },
-  pressable: {
-    marginBottom: spacing.md,
-  },
-  priorityDot: {
-    borderRadius: 5,
-    height: 10,
-    width: 10,
-  },
-  priorityPill: {
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
-    borderRadius: 6,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    maxWidth: '58%',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  priorityText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  slaBreached: {
-    backgroundColor: colors.dangerLight,
-    borderColor: colors.danger,
-  },
-  slaRow: {
-    alignItems: 'center',
-    backgroundColor: colors.warningLight,
-    borderColor: '#FDE68A',
-    borderRadius: 6,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  slaText: {
-    color: colors.warning,
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  slaTextBreached: {
-    color: colors.danger,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: '900',
-    lineHeight: 22,
-  },
-  titleWrap: {
-    flex: 1,
-  },
-});
+function MetaRow({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <View className="flex-row items-center gap-2">
+      {icon}
+      <Text className="flex-1 text-[13px] font-semibold text-base-500" numberOfLines={1}>
+        {text}
+      </Text>
+    </View>
+  );
+}

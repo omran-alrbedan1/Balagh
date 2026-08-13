@@ -64,7 +64,15 @@ export function WelcomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surface-light">
       <View className="flex-row items-center justify-between px-6 pt-2">
-        <Text className="text-xl font-black text-base-900">Balagh</Text>
+        <View className="flex-row items-center gap-2">
+          <Image
+            accessibilityIgnoresInvertColors
+            className="h-9 w-9"
+            resizeMode="contain"
+            source={require('../../../../assets/logo.png')}
+          />
+          <Text className="text-xl font-black text-base-900">Balagh</Text>
+        </View>
         <Pressable
           accessibilityRole="button"
           className="px-4 py-2"
@@ -124,7 +132,7 @@ function Slide({ item, width }: { item: OnboardingSlide; width: number }) {
   return (
     <View className="items-center justify-center pb-6" style={{ width }}>
       <Image
-        className="mb-8 h-[310px] w-[82%] rounded-lg"
+        className="mb-8 h-[310px] w-[82%] rounded-[50px]"
         resizeMode="contain"
         source={item.image}
       />

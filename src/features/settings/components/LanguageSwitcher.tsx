@@ -1,37 +1,25 @@
-import * as Updates from 'expo-updates';
 import { useState } from 'react';
-import { I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import i18next from '@/lib/i18n';
+import { AppLanguage, APP_LANGUAGES } from '@/features/settings/utils/languagePreference';
+import { useLanguageStore } from '@/features/settings/store/languageStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
-const LANGUAGES = [
-  { code: 'en', label: 'English', rtl: false },
-  { code: 'ar', label: 'Arabic', rtl: true },
-] as const;
-
 export function LanguageSwitcher() {
-  const [current, setCurrent] = useState(i18next.language);
+  const storeLanguage = useLanguageStore((state) => state.language);
+  const selectLanguage = useLanguageStore((state) => state.selectLanguage);
+  const [current, setCurrent] = useState(storeLanguage ?? i18next.language);
 
-  const handleSelect = async (code: string, rtl: boolean) => {
-    await i18next.changeLanguage(code);
+  const handleSelect = async (code: AppLanguage) => {
+    await selectLanguage(code);
     setCurrent(code);
-
-    if (I18nManager.isRTL !== rtl) {
-      I18nManager.forceRTL(rtl);
-
-      try {
-        await Updates.reloadAsync();
-      } catch {
-        // Reload is unavailable in some web/dev contexts.
-      }
-    }
   };
 
   return (
     <View style={styles.container}>
-      {LANGUAGES.map((language) => {
+      {APP_LANGUAGES.map((language) => {
         const isSelected = current === language.code;
 
         return (
@@ -39,7 +27,7 @@ export function LanguageSwitcher() {
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
             key={language.code}
-            onPress={() => void handleSelect(language.code, language.rtl)}
+            onPress={() => void handleSelect(language.code)}
             style={[styles.option, isSelected ? styles.selected : null]}
           >
             <Text style={[styles.optionText, isSelected ? styles.selectedText : null]}>

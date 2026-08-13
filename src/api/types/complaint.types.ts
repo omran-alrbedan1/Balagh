@@ -3,15 +3,19 @@ import { AuthUser } from '@/api/types/auth.types';
 
 export interface Attachment {
   id: string;
+  file_path?: string;
   fileName?: string;
   fileSize?: number;
   file_name?: string;
   file_size?: number;
+  full_url?: string;
   mime_type?: string;
+  original_url?: string;
+  path?: string;
   type: 'image';
   uploaded: boolean;
   url?: string;
-  uri: string;
+  uri?: string;
 }
 
 export interface ComplaintLocation {
@@ -35,6 +39,7 @@ export interface ComplaintTimelineEntry {
 export interface Complaint {
   id: string;
   client_ref: string;
+  complaint_number?: string;
   title: string;
   description: string;
   department_id: string;
@@ -60,5 +65,7 @@ export interface CreateComplaintPayload {
   category_id: string;
   title: string;
   description: string;
+  priority_id?: string;
+  source?: 'mobile' | 'offline_sync';
   location?: ComplaintLocation;
 }

@@ -1,8 +1,7 @@
 import { apiClient } from '@/api/client';
-import { mockComplaints, mockCreateComplaint } from '@/api/__mocks__/complaints.mock';
 import { ApiEnvelope, PaginatedEnvelope } from '@/api/types/api-envelope.types';
 import { Complaint, CreateComplaintPayload } from '@/api/types/complaint.types';
-import { Config } from '@/constants/config';
+import { OfflineComplaintPayload } from '@/api/types/offline.types';
 
 export interface GetComplaintsParams {
   sort?: 'newest' | 'oldest' | 'sla';
@@ -29,11 +28,7 @@ export function extractComplaint(data?: ComplaintEnvelope) {
 }
 
 export async function getComplaints(params?: GetComplaintsParams) {
-  if (__DEV__ && Config.USE_MOCKS) {
-    return mockComplaints;
-  }
-
-  const response = await apiClient.get<ComplaintsEnvelope>('/complaints', {
+  const response = await apiClient.get<ComplaintsEnvelope>('/citizen/complaints', {
     params: {
       sort: params?.sort,
       status: params?.status && params.status !== 'all' ? params.status : undefined,
@@ -43,16 +38,7 @@ export async function getComplaints(params?: GetComplaintsParams) {
 }
 
 export async function getComplaint(id: string) {
-  if (__DEV__ && Config.USE_MOCKS) {
-    const complaint = extractComplaints(mockComplaints).find((item) => item.id === id);
-
-    return {
-      success: Boolean(complaint),
-      data: complaint ?? extractComplaints(mockComplaints)[0],
-    };
-  }
-
-  const response = await apiClient.get<ComplaintEnvelope>(`/complaints/${id}`);
+  const response = await apiClient.get<ComplaintEnvelope>(`/citizen/complaints/${id}`);
   return response.data;
 }
 
@@ -60,16 +46,17 @@ export async function createComplaint(
   payload: CreateComplaintPayload,
   attachmentUris: string[],
 ): Promise<ComplaintEnvelope> {
-  if (__DEV__ && Config.USE_MOCKS) {
-    return mockCreateComplaint(payload, attachmentUris);
-  }
-
   const formData = new FormData();
   formData.append('client_ref', payload.client_ref);
   formData.append('department_id', payload.department_id);
   formData.append('category_id', payload.category_id);
   formData.append('title', payload.title);
   formData.append('description', payload.description);
+  formData.append('source', 'mobile');
+
+  if (payload.priority_id) {
+    formData.append('priority_id', payload.priority_id);
+  }
 
   if (payload.location) {
     formData.append('location[lat]', String(payload.location.lat));
@@ -88,9 +75,42 @@ export async function createComplaint(
     } as unknown as Blob);
   });
 
-  const response = await apiClient.post<ComplaintEnvelope>('/complaints', formData, {
+  const response = await apiClient.post<ComplaintEnvelope>('/citizen/complaints', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
+  return response.data;
+}
+
+export async function addAttachment(
+  complaintId: string,
+  attachmentUris: string[],
+): Promise<ComplaintEnvelope> {
+  const formData = new FormData();
+
+  attachmentUris.forEach((uri, index) => {
+    formData.append('attachments[]', {
+      uri,
+      name: `photo-${index + 1}.jpg`,
+      type: 'image/jpeg',
+    } as unknown as Blob);
+  });
+
+  const response = await apiClient.post<ComplaintEnvelope>(
+    `/citizen/complaints/${complaintId}/attachments`,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
+
+  return response.data;
+}
+
+export async function syncOfflineComplaint(payload: OfflineComplaintPayload) {
+  const response = await apiClient.post<ComplaintEnvelope>(
+    '/citizen/offline/complaints/sync',
+    payload,
+  );
   return response.data;
 }

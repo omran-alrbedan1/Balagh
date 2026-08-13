@@ -1,17 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileText } from 'lucide-react-native';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/Button';
 import { ControlledInput } from '@/components/ui/ControlledInput';
+import { SubmitButton } from '@/components/ui/SubmitButton';
+import { StepBackButton } from '@/features/complaints/components/StepBackButton';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import {
   ComplaintDetailsValues,
-  complaintDetailsSchema,
+  getComplaintDetailsSchema,
 } from '@/features/complaints/utils/validation';
 import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
 
 interface StepDetailsProps {
   onBack: () => void;
@@ -19,6 +21,8 @@ interface StepDetailsProps {
 }
 
 export function StepDetails({ onBack, onNext }: StepDetailsProps) {
+  const { i18n, t } = useTranslation();
+  const complaintDetailsSchema = useMemo(() => getComplaintDetailsSchema(), [i18n.language]);
   const title = useDraftComplaintStore((state) => state.title);
   const description = useDraftComplaintStore((state) => state.description);
   const setTitleDescription = useDraftComplaintStore((state) => state.setTitleDescription);
@@ -33,54 +37,41 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="gap-6">
       <View>
-        <Text style={styles.title}>Describe the issue</Text>
-        <Text style={styles.subtitle}>
-          A clear title and description helps us route this faster.
+        <Text className="text-[22px] font-black text-base-900">
+          {t('complaints.describeIssue')}
+        </Text>
+        <Text className="text-[15px] leading-[21px] text-base-500">
+          {t('complaints.describeIssueSubtitle')}
         </Text>
       </View>
 
       <ControlledInput
         control={control}
-        label="Title"
+        label={t('complaints.title')}
         leftIcon={<FileText color={colors.textMuted} size={20} />}
         name="title"
-        placeholder="e.g. Broken streetlight on Main St"
+        placeholder={t('complaints.titlePlaceholder')}
         type="text"
       />
       <ControlledInput
         control={control}
-        label="Description"
+        label={t('complaints.description')}
         name="description"
-        placeholder="What's happening, since when, and any other useful detail..."
+        placeholder={t('complaints.descriptionPlaceholder')}
         type="textarea"
       />
 
-      <View style={styles.actions}>
-        <Button fullWidth={false} label="Back" onPress={onBack} variant="secondary" />
-        <Button fullWidth={false} label="Continue" onPress={handleSubmit(onSubmit)} />
+      <View className="flex-row gap-4">
+        <StepBackButton label={t('common.back')} onPress={onBack} />
+        <SubmitButton
+          fullWidth={false}
+          handleSubmit={handleSubmit}
+          label={t('common.continue')}
+          onSubmit={onSubmit}
+        />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  container: {
-    gap: spacing.lg,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: '900',
-  },
-});

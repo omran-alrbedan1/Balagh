@@ -1,20 +1,33 @@
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { LockKeyhole, Mail, Phone, UserRound } from 'lucide-react-native';
+import { LockKeyhole, Mail, Phone, UserRound, IdCard } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
-import { Screen } from '@/components/layout/Screen';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ControlledInput } from '@/components/ui/ControlledInput';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { SubmitButton } from '@/components/ui/SubmitButton';
-import { registerSchema, RegisterFormValues } from '@/features/auth/utils/validation';
 import { useRegister } from '@/features/auth/hooks/useRegister';
+import { getRegisterSchema, RegisterFormValues } from '@/features/auth/utils/validation';
 import { colors } from '@/theme/colors';
+import { spacing } from '@/theme/spacing';
 
 export function RegisterScreen() {
+  const { i18n, t } = useTranslation();
+  const registerSchema = useMemo(() => getRegisterSchema(), [i18n.language]);
   const { control, handleSubmit, setError } = useForm<RegisterFormValues>({
     defaultValues: {
       email: '',
@@ -22,6 +35,7 @@ export function RegisterScreen() {
       password: '',
       password_confirmation: '',
       phone: '',
+      national_id: '',
     },
     resolver: zodResolver(registerSchema),
   });
@@ -35,7 +49,6 @@ export function RegisterScreen() {
     registerMutation.mutate(
       {
         ...values,
-        email: values.email || undefined,
       },
       {
         onSuccess: (result) => {
@@ -62,53 +75,226 @@ export function RegisterScreen() {
   };
 
   return (
-    <Screen title="Create account">
-      <Card>
-        {requestError ? <ErrorState message={requestError} /> : null}
-        <ControlledInput
-          control={control}
-          name="name"
-          label="Full name"
-          leftIcon={<UserRound color={colors.textMuted} size={20} />}
-          type="text"
-        />
-        <ControlledInput
-          control={control}
-          name="email"
-          helperText="Optional"
-          label="Email"
-          leftIcon={<Mail color={colors.textMuted} size={20} />}
-          type="email"
-        />
-        <ControlledInput
-          control={control}
-          name="phone"
-          label="Phone"
-          leftIcon={<Phone color={colors.textMuted} size={20} />}
-          type="phone"
-        />
-        <ControlledInput
-          control={control}
-          name="password"
-          label="Password"
-          leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-          type="password"
-        />
-        <ControlledInput
-          control={control}
-          name="password_confirmation"
-          label="Confirm password"
-          leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-          type="password"
-        />
-        <SubmitButton
-          label="Create account"
-          handleSubmit={handleSubmit}
-          isSubmitting={registerMutation.isPending}
-          onSubmit={onSubmit}
-        />
-      </Card>
-      <Button label="Already have an account? Log in" variant="secondary" href="/(auth)/login" />
-    </Screen>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboard}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <View style={styles.logoWrap}>
+              <Image
+                accessibilityIgnoresInvertColors
+                resizeMode="contain"
+                source={require('../../../../assets/logo.png')}
+                style={styles.logo}
+              />
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.appName}>{t('appName')}</Text>
+              <Text style={styles.title}>{t('auth.createAccount')}</Text>
+              <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
+            </View>
+          </View>
+
+          <View style={styles.formCard}>
+            {requestError ? <ErrorState message={requestError} /> : null}
+
+            <ControlledInput
+              control={control}
+              label={t('common.fullName')}
+              leftIcon={<UserRound color={colors.textMuted} size={20} />}
+              name="name"
+              type="text"
+            />
+            <ControlledInput
+              control={control}
+              label={t('common.email')}
+              leftIcon={<Mail color={colors.textMuted} size={20} />}
+              name="email"
+              type="email"
+            />
+            <ControlledInput
+              control={control}
+              label={t('common.phone')}
+              leftIcon={<Phone color={colors.textMuted} size={20} />}
+              name="phone"
+              type="phone"
+            />
+            <ControlledInput
+              control={control}
+              label={t('common.nationalId')}
+              leftIcon={<IdCard color={colors.textMuted} size={20} />}
+              name="national_id"
+              type="text"
+            />
+            <ControlledInput
+              control={control}
+              label={t('common.password')}
+              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+              name="password"
+              type="password"
+            />
+            <ControlledInput
+              control={control}
+              label={t('auth.confirmPassword')}
+              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+              name="password_confirmation"
+              type="password"
+            />
+
+            <TouchableOpacity
+              activeOpacity={0.86}
+              accessibilityRole="button"
+              accessibilityState={{
+                busy: registerMutation.isPending,
+                disabled: registerMutation.isPending,
+              }}
+              disabled={registerMutation.isPending}
+              onPress={() => void handleSubmit(onSubmit)()}
+              style={[
+                styles.submitButton,
+                registerMutation.isPending ? styles.submitButtonDisabled : null,
+              ]}
+            >
+              <Text style={styles.submitButtonText}>
+                {registerMutation.isPending ? t('auth.creatingAccount') : t('auth.createAccount')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(auth)/login')}
+            style={({ pressed }) => [styles.loginLink, pressed ? styles.linkPressed : null]}
+          >
+            <Text style={styles.loginMuted}>{t('auth.haveAccount')} </Text>
+            <Text style={styles.loginText}>{t('auth.login')}</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  appName: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  formCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    elevation: 3,
+    gap: spacing.md,
+    padding: spacing.md,
+    shadowColor: colors.shadow,
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+  },
+  header: {
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  headerText: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  keyboard: {
+    flex: 1,
+  },
+  linkPressed: {
+    opacity: 0.72,
+  },
+  loginLink: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+  },
+  loginMuted: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  loginText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  logo: {
+    height: 72,
+    width: 72,
+  },
+  logoWrap: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryLight,
+    borderRadius: 34,
+    borderWidth: 1,
+    height: 104,
+    justifyContent: 'center',
+    width: 104,
+  },
+  safeArea: {
+    backgroundColor: colors.background,
+    flex: 1,
+  },
+  submitButton: {
+    alignItems: 'center',
+    backgroundColor: '#3B82F6',
+    borderColor: '#2563EB',
+    borderRadius: 12,
+    borderWidth: 1,
+    elevation: 2,
+    justifyContent: 'center',
+    minHeight: 54,
+    shadowColor: '#1E40AF',
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    width: '100%',
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    writingDirection: 'auto',
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 300,
+    textAlign: 'center',
+  },
+  title: {
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+});
