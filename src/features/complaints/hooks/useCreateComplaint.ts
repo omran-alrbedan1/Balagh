@@ -22,24 +22,34 @@ export function useCreateComplaint() {
         category_id: draft.categoryId ?? '',
         title: draft.title,
         description: draft.description,
-        location: draft.location,
+        latitude: draft.location?.lat,
+        longitude: draft.location?.lng,
+        address: draft.location?.address,
       };
-      const attachmentUris = draft.attachments.map((attachment) => attachment.uri);
+      const attachments = draft.attachments.map((attachment) =>
+        attachment.kind === 'image'
+          ? { uri: attachment.uri, name: 'image.jpg', mimeType: 'image/jpeg' }
+          : {
+              uri: attachment.uri,
+              name: attachment.name,
+              mimeType: attachment.mimeType,
+            },
+      );
 
       if (!isOnline) {
-        enqueue({ payload, attachmentUris });
+        await enqueue({
+          attachments,
+          payload,
+        });
         return { queued: true as const };
       }
 
-      const result = await createComplaint(payload, attachmentUris);
+      const result = await createComplaint(payload, attachments);
       return { complaint: extractComplaint(result), queued: false as const };
     },
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.complaintsRoot });
-
-      if (!result.queued && result.complaint) {
-        useDraftComplaintStore.getState().reset();
-      }
+      useDraftComplaintStore.getState().reset();
     },
   });
 }

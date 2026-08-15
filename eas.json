@@ -23,7 +23,14 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.example.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://governmentcomplaints.onrender.com/api/v1"
+      }
+    },
+    "production-apk": {
+      "extends": "production",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
       }
     }
   },

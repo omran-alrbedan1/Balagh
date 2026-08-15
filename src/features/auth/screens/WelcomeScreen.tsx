@@ -69,9 +69,8 @@ export function WelcomeScreen() {
             accessibilityIgnoresInvertColors
             className="h-9 w-9"
             resizeMode="contain"
-            source={require('../../../../assets/logo.png')}
+            source={require('../../../../assets/symbol.png')}
           />
-          <Text className="text-xl font-black text-base-900">Balagh</Text>
         </View>
         <Pressable
           accessibilityRole="button"

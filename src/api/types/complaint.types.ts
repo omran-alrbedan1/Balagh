@@ -10,12 +10,15 @@ export interface Attachment {
   file_size?: number;
   full_url?: string;
   mime_type?: string;
+  original_name?: string;
   original_url?: string;
   path?: string;
-  type: 'image';
-  uploaded: boolean;
+  disk?: string;
+  uploaded_by?: string;
+  uploaded?: boolean;
   url?: string;
   uri?: string;
+  created_at?: string;
 }
 
 export interface ComplaintLocation {
@@ -26,14 +29,18 @@ export interface ComplaintLocation {
 
 export interface ComplaintTimelineEntry {
   id: string;
-  status: ComplaintStatus;
   from_status?: ComplaintStatus;
   to_status?: ComplaintStatus;
   changed_by?: string;
-  changed_by_user?: AuthUser;
-  duration_hours?: number;
+  duration_minutes?: number;
   note?: string;
   created_at: string;
+}
+
+export interface ComplaintClassification {
+  auto_assigned: boolean;
+  confidence: number;
+  method: string;
 }
 
 export interface Complaint {
@@ -49,13 +56,18 @@ export interface Complaint {
   assigned_employee?: AuthUser;
   category?: Category;
   department?: Department;
-  location?: ComplaintLocation;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  source?: string;
+  client_uuid?: string;
+  classification?: ComplaintClassification;
   attachments: Attachment[];
   priority?: Priority;
   created_at: string;
   updated_at?: string;
-  sla_due_at?: string;
-  sla_status?: 'on_track' | 'due_soon' | 'breached';
+  due_at?: string;
+  is_sla_breached?: boolean;
   timeline: ComplaintTimelineEntry[];
 }
 
@@ -67,5 +79,7 @@ export interface CreateComplaintPayload {
   description: string;
   priority_id?: string;
   source?: 'mobile' | 'offline_sync';
-  location?: ComplaintLocation;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }

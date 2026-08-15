@@ -7,6 +7,7 @@ import '../global.css';
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { configureNotificationHandlers } from '@/features/notifications/utils/notificationHandlers';
 import { useLanguageStore } from '@/features/settings/store/languageStore';
 import { AppProviders } from '@/lib/AppProviders';
 
@@ -21,6 +22,7 @@ function RootNavigator() {
   const isLanguageHydrated = useLanguageStore((state) => state.isHydrated);
 
   useEffect(() => {
+    configureNotificationHandlers();
     Promise.all([hydrate(), hydrateLanguage()]).finally(() => {
       void SplashScreen.hideAsync();
     });

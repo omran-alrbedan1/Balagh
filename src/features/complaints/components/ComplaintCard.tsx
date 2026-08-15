@@ -28,10 +28,11 @@ interface ComplaintCardProps {
 
 export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
   const { t } = useTranslation();
-  const slaCountdown = getSlaCountdown(complaint.sla_due_at);
-  const isBreached = slaCountdown?.includes('breached') || complaint.sla_status === 'breached';
+  const slaCountdown = getSlaCountdown(complaint.due_at);
+  const isBreached =
+    complaint.is_sla_breached === true || slaCountdown?.includes('breached') === true;
   const priorityColor = complaint.priority?.color ?? colors.primary;
-  const location = complaint.location?.address;
+  const location = complaint.address;
   const categoryLabel = getDepartmentCategoryLabel(complaint);
 
   return (

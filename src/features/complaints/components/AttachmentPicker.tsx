@@ -1,14 +1,26 @@
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, ImagePlus, X } from 'lucide-react-native';
+import { Camera, FileText, ImagePlus, X } from 'lucide-react-native';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
+import {
+  DraftAttachment,
+  useDraftComplaintStore,
+} from '@/features/complaints/store/draftComplaintStore';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 const MAX_ATTACHMENTS = 5;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
 
 async function compressImage(uri: string) {
   const result = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1280 } }], {
@@ -26,12 +38,21 @@ export function AttachmentPicker() {
   const removeAttachment = useDraftComplaintStore((state) => state.removeAttachment);
   const canAddMore = attachments.length < MAX_ATTACHMENTS;
 
-  const handlePick = async (source: 'camera' | 'gallery') => {
-    if (!canAddMore) {
-      Alert.alert(
-        t('permissions.limitReached'),
-        t('permissions.photoLimit', { max: MAX_ATTACHMENTS }),
-      );
+  const guardLimit = () => {
+    if (canAddMore) {
+      return true;
+    }
+
+    Alert.alert(
+      t('permissions.limitReached'),
+      t('permissions.photoLimit', { max: MAX_ATTACHMENTS }),
+    );
+
+    return false;
+  };
+
+  const handlePickImage = async (source: 'camera' | 'gallery') => {
+    if (!guardLimit()) {
       return;
     }
 
@@ -62,39 +83,106 @@ export function AttachmentPicker() {
       return;
     }
 
-    for (const asset of result.assets.slice(0, MAX_ATTACHMENTS - attachments.length)) {
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+
+    for (const asset of result.assets.slice(0, remaining)) {
       const compressedUri = await compressImage(asset.uri);
-      addAttachment(compressedUri);
+      addAttachment({ kind: 'image', uri: compressedUri });
+    }
+  };
+
+  const handlePickDocument = async () => {
+    if (!guardLimit()) {
+      return;
+    }
+
+    const result = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+      multiple: true,
+      type: ALLOWED_MIME_TYPES,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const remaining = MAX_ATTACHMENTS - attachments.length;
+
+    for (const asset of result.assets.slice(0, remaining)) {
+      const mimeType = asset.mimeType ?? '';
+
+      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+        Alert.alert(t('permissions.unsupportedFile'), t('permissions.unsupportedFileMessage'));
+        continue;
+      }
+
+      if (asset.size != null && asset.size > MAX_FILE_BYTES) {
+        Alert.alert(
+          t('permissions.fileTooLarge'),
+          t('permissions.fileTooLargeMessage', { max: 5 }),
+        );
+        continue;
+      }
+
+      const draftAttachment: Omit<DraftAttachment, 'id'> = {
+        kind: 'document',
+        uri: asset.uri,
+        name: asset.name,
+        mimeType,
+        size: asset.size,
+      };
+      addAttachment(draftAttachment);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.actions}>
-        <Pressable onPress={() => void handlePick('camera')} style={styles.pickButton}>
+        <Pressable onPress={() => void handlePickImage('camera')} style={styles.pickButton}>
           <Camera color={colors.primary} size={18} />
           <Text style={styles.pickText}>{t('complaints.camera')}</Text>
         </Pressable>
-        <Pressable onPress={() => void handlePick('gallery')} style={styles.pickButton}>
+        <Pressable onPress={() => void handlePickImage('gallery')} style={styles.pickButton}>
           <ImagePlus color={colors.primary} size={18} />
           <Text style={styles.pickText}>{t('complaints.gallery')}</Text>
+        </Pressable>
+        <Pressable onPress={() => void handlePickDocument()} style={styles.pickButton}>
+          <FileText color={colors.primary} size={18} />
+          <Text style={styles.pickText}>{t('complaints.document')}</Text>
         </Pressable>
       </View>
 
       <View style={styles.grid}>
-        {attachments.map((attachment) => (
-          <View key={attachment.id} style={styles.thumbnailWrap}>
-            <Image source={{ uri: attachment.uri }} style={styles.thumbnail} />
-            <Pressable
-              accessibilityLabel={t('complaints.removePhoto')}
-              accessibilityRole="button"
-              onPress={() => removeAttachment(attachment.id)}
-              style={styles.removeButton}
-            >
-              <X color="#FFFFFF" size={14} />
-            </Pressable>
-          </View>
-        ))}
+        {attachments.map((attachment) =>
+          attachment.kind === 'image' ? (
+            <View key={attachment.id} style={styles.thumbnailWrap}>
+              <Image source={{ uri: attachment.uri }} style={styles.thumbnail} />
+              <Pressable
+                accessibilityLabel={t('complaints.removePhoto')}
+                accessibilityRole="button"
+                onPress={() => removeAttachment(attachment.id)}
+                style={styles.removeButton}
+              >
+                <X color="#FFFFFF" size={14} />
+              </Pressable>
+            </View>
+          ) : (
+            <View key={attachment.id} style={styles.documentCard}>
+              <FileText color={colors.primary} size={20} />
+              <Text numberOfLines={1} style={styles.documentName}>
+                {attachment.name ?? t('complaints.document')}
+              </Text>
+              <Pressable
+                accessibilityLabel={t('complaints.removePhoto')}
+                accessibilityRole="button"
+                onPress={() => removeAttachment(attachment.id)}
+                style={styles.removeButton}
+              >
+                <X color="#FFFFFF" size={14} />
+              </Pressable>
+            </View>
+          ),
+        )}
       </View>
 
       <Text style={styles.caption}>
@@ -115,6 +203,25 @@ const styles = StyleSheet.create({
   },
   container: {
     gap: spacing.md,
+  },
+  documentCard: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryLight,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    maxWidth: 220,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    position: 'relative',
+  },
+  documentName: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
   },
   grid: {
     flexDirection: 'row',

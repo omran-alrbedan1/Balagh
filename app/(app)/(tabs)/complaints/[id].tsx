@@ -33,6 +33,7 @@ import {
   getDepartmentCategoryLabel,
   getPriorityLabel,
   getSlaCountdown,
+  getSlaStatus,
 } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
 
@@ -77,10 +78,10 @@ export default function ComplaintDetailScreen() {
 
 function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
   const { t } = useTranslation();
-  const slaCountdown = getSlaCountdown(complaint.sla_due_at);
-  const isBreached = slaCountdown?.includes('breached') || complaint.sla_status === 'breached';
-  const isDueSoon = complaint.sla_status === 'due_soon';
-  const isOnTrack = complaint.sla_status === 'on_track';
+  const slaCountdown = getSlaCountdown(complaint.due_at);
+  const slaStatus = getSlaStatus(complaint.due_at, complaint.is_sla_breached);
+  const isBreached = slaStatus === 'breached';
+  const isDueSoon = slaStatus === 'due_soon';
   const attachmentUris = complaint.attachments
     .map((attachment) => ({
       id: attachment.id,
@@ -109,7 +110,7 @@ function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
               </View>
               <View className="gap-2">
                 <StatusBadge status={complaint.status} />
-                {complaint.sla_status && (
+                {slaStatus && (
                   <View
                     className={`flex-row items-center gap-1.5 rounded-full px-3 py-1 ${
                       isBreached ? 'bg-danger-100' : isDueSoon ? 'bg-warning-100' : 'bg-success-100'
@@ -131,7 +132,7 @@ function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
                             : 'text-success-700'
                       }`}
                     >
-                      {t(`complaints.slaStatus.${complaint.sla_status}`)}
+                      {t(`complaints.slaStatus.${slaStatus}`)}
                     </Text>
                   </View>
                 )}
@@ -182,11 +183,11 @@ function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
                 value={complaint.assigned_employee.name}
               />
             ) : null}
-            {complaint.location?.address ? (
+            {complaint.address ? (
               <DetailRow
                 icon={<MapPin color={colors.primary} size={18} />}
                 label={t('complaints.location')}
-                value={complaint.location.address}
+                value={complaint.address}
               />
             ) : null}
           </View>

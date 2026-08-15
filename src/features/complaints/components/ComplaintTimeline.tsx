@@ -46,16 +46,14 @@ export function ComplaintTimeline({ entries }: ComplaintTimelineProps) {
 
             <View style={[styles.content, isCurrent ? styles.currentContent : null]}>
               <View style={styles.row}>
-                <StatusBadge status={entry.to_status ?? entry.status} />
+                <StatusBadge status={entry.to_status ?? entry.from_status ?? 'submitted'} />
                 {isCurrent ? <Text style={styles.currentLabel}>{t('common.current')}</Text> : null}
               </View>
               <Text style={styles.date}>{formatDateTime(entry.created_at)}</Text>
               {entry.note ? <Text style={styles.note}>{entry.note}</Text> : null}
-              {entry.changed_by_user?.name || entry.changed_by ? (
+              {entry.changed_by ? (
                 <Text style={styles.meta}>
-                  {t('complaints.timelineBy', {
-                    name: entry.changed_by_user?.name ?? entry.changed_by,
-                  })}
+                  {t('complaints.timelineBy', { name: entry.changed_by })}
                 </Text>
               ) : null}
               <Text style={styles.duration}>{formatDurationBetween(entry, next)}</Text>

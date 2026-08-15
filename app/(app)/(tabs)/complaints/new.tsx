@@ -44,8 +44,8 @@ export default function NewComplaintScreen() {
         exiting={direction === 1 ? SlideOutLeft.duration(250) : SlideOutRight.duration(250)}
         layout={LinearTransition.duration(200)}
       >
-        {step === 1 ? <StepCategory onNext={next} /> : null}
-        {step === 2 ? <StepDetails onBack={back} onNext={next} /> : null}
+        {step === 1 ? <StepDetails onNext={next} /> : null}
+        {step === 2 ? <StepCategory onBack={back} onNext={next} /> : null}
         {step === 3 ? <StepPhotos onBack={back} onNext={next} /> : null}
         {step === 4 ? <StepLocation onBack={back} onNext={next} /> : null}
         {step === 5 ? <StepReview onBack={back} /> : null}

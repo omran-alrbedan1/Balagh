@@ -116,6 +116,34 @@ export function formatDateTime(value?: string) {
   }).format(date);
 }
 
+export const DUE_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export type SlaStatus = 'on_track' | 'due_soon' | 'breached';
+
+export function getSlaStatus(dueAt?: string, isBreached?: boolean): SlaStatus | undefined {
+  if (isBreached) {
+    return 'breached';
+  }
+
+  if (!dueAt) {
+    return undefined;
+  }
+
+  const due = new Date(dueAt).getTime();
+
+  if (Number.isNaN(due)) {
+    return undefined;
+  }
+
+  const diffMs = due - Date.now();
+
+  if (diffMs < 0) {
+    return 'breached';
+  }
+
+  return diffMs <= DUE_SOON_WINDOW_MS ? 'due_soon' : 'on_track';
+}
+
 export function getSlaCountdown(slaDueAt?: string) {
   if (!slaDueAt) {
     return undefined;
@@ -182,8 +210,8 @@ export function formatDurationBetween(
   entry: ComplaintTimelineEntry,
   next?: ComplaintTimelineEntry,
 ) {
-  if (typeof entry.duration_hours === 'number') {
-    return formatHours(entry.duration_hours);
+  if (typeof entry.duration_minutes === 'number') {
+    return formatHours(entry.duration_minutes / 60);
   }
 
   if (!next) {

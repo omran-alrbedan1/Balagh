@@ -38,7 +38,7 @@ export type LoginResponse = PendingOtpResponse | AuthSessionResponse;
 export interface VerifyOtpPayload {
   user_id: string;
   otp: string;
-  purpose: 'register' | 'login';
+  purpose: 'register' | 'verify_email' | 'login';
   device_name?: string;
 }
 
@@ -66,5 +66,5 @@ export interface ResetPasswordPayload {
 
 export interface ResendOtpPayload {
   user_id: string;
-  purpose: 'register' | 'login';
+  purpose: 'register' | 'verify_email' | 'login';
 }

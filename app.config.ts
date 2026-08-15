@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#f7fbff',
+      backgroundColor: '#082248',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
@@ -30,15 +30,22 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     },
     android: {
       package: 'com.balagh.app',
+      googleServicesFile: './google-services.json',
       usesCleartextTraffic: true,
       permissions: ['CAMERA', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS'],
       adaptiveIcon: {
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
-        backgroundColor: '#EFF6FF',
+        backgroundColor: '#082248',
       },
     },
     scheme: 'balagh',
-    plugins: ['expo-router', 'expo-dev-client', 'expo-secure-store', '@sentry/react-native'],
+    plugins: [
+      'expo-router',
+      'expo-dev-client',
+      'expo-secure-store',
+      '@sentry/react-native',
+      'expo-splash-screen',
+    ],
   }) as ExpoConfig;

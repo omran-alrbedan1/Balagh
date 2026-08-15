@@ -96,7 +96,6 @@ export function LoginScreen() {
                 className="h-24 w-24"
               />
             </View>
-            <Text className="text-lg font-semibold text-base-900">{t('appName')}</Text>
           </View>
 
           <View className="items-center mb-8">
@@ -178,14 +177,14 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   submitButton: {
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    borderColor: '#2563EB',
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryPressed,
     borderWidth: 1,
     borderRadius: 12,
     elevation: 2,
     justifyContent: 'center',
     minHeight: 54,
-    shadowColor: '#1E40AF',
+    shadowColor: colors.primaryDark,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 14,

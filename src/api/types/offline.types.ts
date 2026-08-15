@@ -1,33 +1,31 @@
 export interface OfflineComplaintPayload {
   client_uuid: string;
   created_offline_at: string;
-  complaint: {
-    client_ref: string;
-    department_id: string;
-    category_id: string;
-    title: string;
-    description: string;
-    priority_id?: string;
-    location?: {
-      lat: number;
-      lng: number;
-      address?: string;
-    };
-  };
+  client_ref?: string;
+  department_id?: string;
+  category_id?: string;
+  title: string;
+  description: string;
+  priority_id?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  source?: 'offline_sync';
 }
 
 export interface OfflineSubmission {
   id: string;
   client_uuid: string;
-  status: 'queued' | 'syncing' | 'synced' | 'failed';
-  complaint: {
-    client_ref: string;
-    title: string;
-    department_id: string;
-    category_id: string;
-  };
-  created_offline_at: string;
+  status: 'pending' | 'synced' | 'failed';
+  submitted_offline_at?: string;
   synced_at?: string;
   error_message?: string;
-  retry_count: number;
+  synced_complaint?: {
+    id: string;
+    complaint_number?: string;
+    title: string;
+    status: string;
+  };
+  created_at: string;
+  updated_at?: string;
 }

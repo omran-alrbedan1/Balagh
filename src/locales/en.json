@@ -122,12 +122,15 @@
     "complaintNumber": "Complaint #{{number}}",
     "created": "Created",
     "createdAt": "Created {{date}}",
+    "autoClassifyHint": "We'll automatically suggest the right department and category on the next step.",
+    "classifying": "Analyzing your complaint...",
     "description": "Description",
     "describeIssue": "Describe the issue",
     "describeIssueSubtitle": "A clear title and description helps us route this faster.",
     "descriptionPlaceholder": "What's happening, since when, and any other useful detail...",
     "detailLoading": "Loading complaint",
     "detailTitle": "Complaint Detail",
+    "document": "Document",
     "fileFirst": "File your first complaint",
     "gallery": "Gallery",
     "listEmptyMessage": "Complaints you submit will appear here with live status and SLA tracking.",
@@ -156,6 +159,7 @@
     "selectDepartmentError": "Please choose a department.",
     "selectStepSubtitle": "Choose the department and category that best matches your issue.",
     "selectStepTitle": "What is this about?",
+    "suggestedCategory": "Suggested: {{department}} / {{category}} ({{confidence}}% confidence). You can change it below.",
     "slaStatus": {
       "on_track": "On Track",
       "due_soon": "Due Soon",
@@ -230,11 +234,15 @@
   },
   "permissions": {
     "limitReached": "Limit reached",
-    "photoLimit": "You can attach up to {{max}} photos.",
+    "photoLimit": "You can attach up to {{max}} files.",
     "permissionNeeded": "Permission needed",
     "photoAccess": "Please allow {{source}} access to attach a photo.",
     "camera": "camera",
-    "photoLibrary": "photo library"
+    "photoLibrary": "photo library",
+    "unsupportedFile": "Unsupported file",
+    "unsupportedFileMessage": "Only JPG, PNG, PDF, DOC and DOCX files are allowed.",
+    "fileTooLarge": "File too large",
+    "fileTooLargeMessage": "The maximum file size is {{max}} MB."
   },
   "input": {
     "hidePassword": "Hide password",

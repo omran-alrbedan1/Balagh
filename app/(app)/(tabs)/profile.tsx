@@ -10,7 +10,6 @@ import {
   Bell,
   HelpCircle,
   ChevronRight,
-  Award,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -72,23 +71,10 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
-
-        {/* Stats Row - Only if user has reports count */}
-        {user?.reportsCount !== undefined && (
-          <View className="flex-row justify-around mt-6 pt-6 border-t border-white/20">
-            <View className="items-center">
-              <Text className="text-white text-xl font-black">{user.reportsCount}</Text>
-              <View className="flex-row items-center gap-1 mt-0.5">
-                <Award color="rgba(255,255,255,0.7)" size={12} />
-                <Text className="text-white/70 text-xs font-medium">{t('profile.reports')}</Text>
-              </View>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* Menu Items */}
-      <Card className="mb-4">
+      <Card style={{ marginBottom: 16 }}>
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           return (
@@ -99,7 +85,7 @@ export default function ProfileScreen() {
               }`}
             >
               <View className="w-9 h-9 rounded-full bg-primary-50 dark:bg-primary-900/30 items-center justify-center">
-                <Icon color="#2563EB" size={18} />
+                <Icon color="#082248" size={18} />
               </View>
               <Text className="flex-1 text-base-900 dark:text-white text-base font-medium ml-3">
                 {item.label}
@@ -111,10 +97,10 @@ export default function ProfileScreen() {
       </Card>
 
       {/* Language Section */}
-      <Card className="mb-4">
+      <Card style={{ marginBottom: 16 }}>
         <View className="flex-row items-center gap-3 mb-3">
           <View className="w-9 h-9 rounded-full bg-primary-50 dark:bg-primary-900/30 items-center justify-center">
-            <Globe2 color="#2563EB" size={18} />
+            <Globe2 color="#082248" size={18} />
           </View>
           <Text className="text-base-900 dark:text-white text-base font-bold">
             {t('profile.language')}
@@ -124,7 +110,7 @@ export default function ProfileScreen() {
       </Card>
 
       {/* Version Info */}
-      <Card className="mb-4">
+      <Card style={{ marginBottom: 16 }}>
         <View className="flex-row items-center justify-between">
           <Text className="text-base-500 dark:text-base-400 text-sm">{t('common.appVersion')}</Text>
           <View className="bg-primary-50 dark:bg-primary-900/30 px-3 py-1 rounded-full">

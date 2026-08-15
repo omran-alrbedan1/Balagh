@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText } from 'lucide-react-native';
+import { FileText, Sparkles } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { Text, View } from 'react-native';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { ControlledInput } from '@/components/ui/ControlledInput';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import { StepBackButton } from '@/features/complaints/components/StepBackButton';
+import { useClassifyComplaint } from '@/features/complaints/hooks/useClassifyComplaint';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import {
   ComplaintDetailsValues,
@@ -16,7 +17,7 @@ import {
 import { colors } from '@/theme/colors';
 
 interface StepDetailsProps {
-  onBack: () => void;
+  onBack?: () => void;
   onNext: () => void;
 }
 
@@ -26,6 +27,8 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
   const title = useDraftComplaintStore((state) => state.title);
   const description = useDraftComplaintStore((state) => state.description);
   const setTitleDescription = useDraftComplaintStore((state) => state.setTitleDescription);
+  const setClassification = useDraftComplaintStore((state) => state.setClassification);
+  const classifyComplaint = useClassifyComplaint();
   const { control, handleSubmit } = useForm<ComplaintDetailsValues>({
     defaultValues: { description, title },
     resolver: zodResolver(complaintDetailsSchema),
@@ -33,6 +36,8 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
 
   const onSubmit = (values: ComplaintDetailsValues) => {
     setTitleDescription(values.title, values.description);
+    setClassification({ status: 'loading', error: undefined });
+    classifyComplaint.mutate({ title: values.title, description: values.description });
     onNext();
   };
 
@@ -63,8 +68,15 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
         type="textarea"
       />
 
+      <View className="flex-row items-center gap-2 rounded-xl bg-primary-50 px-4 py-3">
+        <Sparkles color={colors.primary} size={16} />
+        <Text className="flex-1 text-[13px] leading-[18px] text-primary-700">
+          {t('complaints.autoClassifyHint')}
+        </Text>
+      </View>
+
       <View className="flex-row gap-4">
-        <StepBackButton label={t('common.back')} onPress={onBack} />
+        {onBack ? <StepBackButton label={t('common.back')} onPress={onBack} /> : null}
         <SubmitButton
           fullWidth={false}
           handleSubmit={handleSubmit}

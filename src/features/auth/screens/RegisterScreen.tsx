@@ -95,7 +95,6 @@ export function RegisterScreen() {
               />
             </View>
             <View style={styles.headerText}>
-              <Text style={styles.appName}>{t('appName')}</Text>
               <Text style={styles.title}>{t('auth.createAccount')}</Text>
               <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
             </View>
@@ -261,14 +260,14 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    borderColor: '#2563EB',
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryPressed,
     borderWidth: 1,
+    borderRadius: 12,
     elevation: 2,
     justifyContent: 'center',
     minHeight: 54,
-    shadowColor: '#1E40AF',
+    shadowColor: colors.primaryDark,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 14,

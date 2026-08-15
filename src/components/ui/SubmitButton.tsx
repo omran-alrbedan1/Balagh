@@ -4,6 +4,7 @@ import { FieldValues, SubmitHandler, UseFormHandleSubmit } from 'react-hook-form
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { spacing } from '@/theme/spacing';
+import { colors } from '@/theme/colors';
 
 interface SubmitButtonProps<TFieldValues extends FieldValues> {
   label: string;
@@ -62,15 +63,15 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#3B82F6',
-    borderColor: '#2563EB',
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryPressed,
     borderRadius: 12,
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
     minHeight: 54,
     paddingHorizontal: spacing.md,
-    shadowColor: '#1E40AF',
+    shadowColor: colors.primaryDark,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 14,

@@ -32,6 +32,11 @@ export function OtpScreen() {
   }>();
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(60);
+  // Unverified users logging in get an OTP issued with the `verify_email` purpose,
+  // but the backend does not advertise it. Fall back to that purpose on failure.
+  const [effectivePurpose, setEffectivePurpose] = useState<'register' | 'verify_email' | 'login'>(
+    purpose,
+  );
   const verifyOtpMutation = useVerifyOtp();
   const resendOtpMutation = useResendOtp();
   const requestError =
@@ -49,7 +54,7 @@ export function OtpScreen() {
     if (!userId || resendOtpMutation.isPending) return;
 
     resendOtpMutation.mutate(
-      { user_id: userId, purpose },
+      { user_id: userId, purpose: effectivePurpose },
       {
         onSuccess: (result) => {
           setCountdown(60);
@@ -64,14 +69,23 @@ export function OtpScreen() {
   const onSubmit = () => {
     if (otp.length !== 6 || verifyOtpMutation.isPending) return;
 
-    verifyOtpMutation.mutate(
-      { user_id: userId, otp, purpose },
-      {
-        onSuccess: () => {
-          router.replace('/(app)/(tabs)');
+    const attempt = (nextPurpose: 'register' | 'verify_email' | 'login') => {
+      verifyOtpMutation.mutate(
+        { user_id: userId, otp, purpose: nextPurpose },
+        {
+          onSuccess: () => {
+            router.replace('/(app)/(tabs)');
+          },
+          onError: () => {
+            if (nextPurpose === 'login') {
+              setEffectivePurpose('verify_email');
+            }
+          },
         },
-      },
-    );
+      );
+    };
+
+    attempt(effectivePurpose);
   };
 
   return (

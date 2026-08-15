@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   pill: {
-    backgroundColor: '#E6F4FE',
+    backgroundColor: '#E0E8F3',
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

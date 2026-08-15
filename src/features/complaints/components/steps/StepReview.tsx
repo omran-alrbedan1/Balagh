@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { FileText } from 'lucide-react-native';
 import { Image, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -80,13 +81,25 @@ export function StepReview({ onBack }: { onBack: () => void }) {
             {t('complaints.photos', { count: draft.attachments.length })}
           </Text>
           <View className="mt-2 flex-row flex-wrap gap-2">
-            {draft.attachments.map((attachment) => (
-              <Image
-                className="h-[68px] w-[68px] rounded-lg"
-                key={attachment.id}
-                source={{ uri: attachment.uri }}
-              />
-            ))}
+            {draft.attachments.map((attachment) =>
+              attachment.kind === 'image' ? (
+                <Image
+                  className="h-[68px] w-[68px] rounded-lg"
+                  key={attachment.id}
+                  source={{ uri: attachment.uri }}
+                />
+              ) : (
+                <View
+                  className="flex-row items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-2"
+                  key={attachment.id}
+                >
+                  <FileText className="text-primary-600" color="#082248" size={16} />
+                  <Text className="max-w-[180px] text-[13px] font-bold text-primary-700">
+                    {attachment.name ?? t('complaints.document')}
+                  </Text>
+                </View>
+              ),
+            )}
           </View>
         </Card>
       ) : null}

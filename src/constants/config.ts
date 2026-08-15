@@ -10,6 +10,6 @@ export const Config = {
     (Platform.OS === 'android'
       ? 'http://10.77.251.8:8000/api/v1'
       : 'http://10.77.251.8:8000/api/v1'),
-  API_TIMEOUT_MS: 15_000,
+  API_TIMEOUT_MS: 45_000,
   USE_MOCKS: process.env.EXPO_PUBLIC_USE_MOCKS === 'true',
 } as const;

@@ -101,7 +101,7 @@ function sortComplaints(first: Complaint, second: Complaint, sort: SortMode) {
   }
 
   if (sort === 'sla') {
-    return dateValue(first.sla_due_at) - dateValue(second.sla_due_at);
+    return dateValue(first.due_at) - dateValue(second.due_at);
   }
 
   return dateValue(second.created_at) - dateValue(first.created_at);

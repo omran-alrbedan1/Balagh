@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
-const STEPS = ['category', 'details', 'photos', 'location', 'review'] as const;
+const STEPS = ['details', 'category', 'photos', 'location', 'review'] as const;
 
 export function StepIndicator({ current }: { current: number }) {
   const { t } = useTranslation();

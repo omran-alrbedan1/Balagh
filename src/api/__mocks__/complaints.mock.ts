@@ -27,22 +27,22 @@ export const mockComplaints: PaginatedEnvelope<Complaint[]> = {
       status: 'in_progress',
       attachments: [],
       created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      sla_due_at: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
+      due_at: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
       timeline: [
         {
           id: 'tl-1001-1',
-          status: 'submitted',
+          to_status: 'submitted',
           created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         },
         {
           id: 'tl-1001-2',
-          status: 'in_review',
+          to_status: 'in_review',
           created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           note: 'Complaint reviewed and routed to roads team.',
         },
         {
           id: 'tl-1001-3',
-          status: 'in_progress',
+          to_status: 'in_progress',
           created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
         },
       ],
@@ -69,12 +69,12 @@ export const mockComplaints: PaginatedEnvelope<Complaint[]> = {
       timeline: [
         {
           id: 'tl-1002-1',
-          status: 'submitted',
+          to_status: 'submitted',
           created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
         },
         {
           id: 'tl-1002-2',
-          status: 'resolved',
+          to_status: 'resolved',
           created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
           note: 'Collection completed.',
         },
@@ -104,17 +104,17 @@ export async function mockCreateComplaint(
     department_id: payload.department_id,
     category_id: payload.category_id,
     status: 'submitted',
-    location: payload.location,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
+    address: payload.address,
     attachments: attachmentUris.map((uri, index) => ({
       id: `${payload.client_ref}-${index}`,
       uri,
-      type: 'image',
-      fileName: `photo-${index + 1}.jpg`,
-      fileSize: 0,
+      original_name: `photo-${index + 1}.jpg`,
       uploaded: true,
     })),
     created_at: now,
-    timeline: [{ id: randomId(), status: 'submitted', created_at: now }],
+    timeline: [{ id: randomId(), to_status: 'submitted', created_at: now }],
   };
 
   mockComplaints.data.unshift(complaint);

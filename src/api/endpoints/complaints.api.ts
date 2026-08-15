@@ -8,6 +8,12 @@ export interface GetComplaintsParams {
   status?: string;
 }
 
+export interface AttachmentUpload {
+  uri: string;
+  name?: string;
+  mimeType?: string;
+}
+
 export type ComplaintsEnvelope = PaginatedEnvelope<Complaint[] | { complaints: Complaint[] }>;
 export type ComplaintEnvelope = ApiEnvelope<Complaint | { complaint: Complaint }>;
 
@@ -27,6 +33,14 @@ export function extractComplaint(data?: ComplaintEnvelope) {
   return 'complaint' in data.data ? data.data.complaint : data.data;
 }
 
+function toFormDataFile(attachment: AttachmentUpload, index: number) {
+  return {
+    uri: attachment.uri,
+    name: attachment.name || `attachment-${index + 1}`,
+    type: attachment.mimeType || 'application/octet-stream',
+  } as unknown as Blob;
+}
+
 export async function getComplaints(params?: GetComplaintsParams) {
   const response = await apiClient.get<ComplaintsEnvelope>('/citizen/complaints', {
     params: {
@@ -44,7 +58,7 @@ export async function getComplaint(id: string) {
 
 export async function createComplaint(
   payload: CreateComplaintPayload,
-  attachmentUris: string[],
+  attachments: AttachmentUpload[],
 ): Promise<ComplaintEnvelope> {
   const formData = new FormData();
   formData.append('client_ref', payload.client_ref);
@@ -58,21 +72,20 @@ export async function createComplaint(
     formData.append('priority_id', payload.priority_id);
   }
 
-  if (payload.location) {
-    formData.append('location[lat]', String(payload.location.lat));
-    formData.append('location[lng]', String(payload.location.lng));
-
-    if (payload.location.address) {
-      formData.append('location[address]', payload.location.address);
-    }
+  if (typeof payload.latitude === 'number') {
+    formData.append('latitude', String(payload.latitude));
   }
 
-  attachmentUris.forEach((uri, index) => {
-    formData.append('attachments[]', {
-      uri,
-      name: `photo-${index + 1}.jpg`,
-      type: 'image/jpeg',
-    } as unknown as Blob);
+  if (typeof payload.longitude === 'number') {
+    formData.append('longitude', String(payload.longitude));
+  }
+
+  if (payload.address) {
+    formData.append('address', payload.address);
+  }
+
+  attachments.forEach((attachment, index) => {
+    formData.append('attachments[]', toFormDataFile(attachment, index));
   });
 
   const response = await apiClient.post<ComplaintEnvelope>('/citizen/complaints', formData, {
@@ -107,10 +120,59 @@ export async function addAttachment(
   return response.data;
 }
 
-export async function syncOfflineComplaint(payload: OfflineComplaintPayload) {
+export async function syncOfflineComplaint(
+  payload: OfflineComplaintPayload,
+  attachments: AttachmentUpload[] = [],
+) {
+  const formData = new FormData();
+  formData.append('client_uuid', payload.client_uuid);
+  formData.append('title', payload.title);
+  formData.append('description', payload.description);
+  formData.append('source', 'offline_sync');
+
+  if (payload.created_offline_at) {
+    formData.append('created_offline_at', payload.created_offline_at);
+  }
+
+  if (payload.client_ref) {
+    formData.append('client_ref', payload.client_ref);
+  }
+
+  if (payload.department_id) {
+    formData.append('department_id', payload.department_id);
+  }
+
+  if (payload.category_id) {
+    formData.append('category_id', payload.category_id);
+  }
+
+  if (payload.priority_id) {
+    formData.append('priority_id', payload.priority_id);
+  }
+
+  if (typeof payload.latitude === 'number') {
+    formData.append('latitude', String(payload.latitude));
+  }
+
+  if (typeof payload.longitude === 'number') {
+    formData.append('longitude', String(payload.longitude));
+  }
+
+  if (payload.address) {
+    formData.append('address', payload.address);
+  }
+
+  attachments.forEach((attachment, index) => {
+    formData.append('attachments[]', toFormDataFile(attachment, index));
+  });
+
   const response = await apiClient.post<ComplaintEnvelope>(
     '/citizen/offline/complaints/sync',
-    payload,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
   );
+
   return response.data;
 }

@@ -122,12 +122,15 @@
     "complaintNumber": "بلاغ #{{number}}",
     "created": "تاريخ الإنشاء",
     "createdAt": "أُنشئ في {{date}}",
+    "autoClassifyHint": "سنقترح تلقائيًا القسم والفئة المناسبين في الخطوة التالية.",
+    "classifying": "جارٍ تحليل البلاغ...",
     "description": "الوصف",
     "describeIssue": "وصف المشكلة",
     "describeIssueSubtitle": "يساعد العنوان والوصف الواضحان على توجيه البلاغ بشكل أسرع.",
     "descriptionPlaceholder": "ما الذي يحدث؟ منذ متى؟ وأي تفاصيل مفيدة أخرى...",
     "detailLoading": "جار تحميل البلاغ",
     "detailTitle": "تفاصيل البلاغ",
+    "document": "مستند",
     "fileFirst": "قدّم أول بلاغ",
     "gallery": "المعرض",
     "listEmptyMessage": "ستظهر البلاغات التي تقدمها هنا مع الحالة وتتبع اتفاقية الخدمة.",
@@ -156,6 +159,7 @@
     "selectDepartmentError": "يرجى اختيار القسم.",
     "selectStepSubtitle": "اختر القسم والفئة الأنسب للمشكلة.",
     "selectStepTitle": "ما موضوع البلاغ؟",
+    "suggestedCategory": "الاقتراح: {{department}} / {{category}} (بثقة {{confidence}}%). يمكنك تغييره أدناه.",
     "slaStatus": {
       "on_track": "على المسار",
       "due_soon": "قريب الموعد",
@@ -230,11 +234,15 @@
   },
   "permissions": {
     "limitReached": "تم بلوغ الحد",
-    "photoLimit": "يمكنك إرفاق حتى {{max}} صور.",
+    "photoLimit": "يمكنك إرفاق حتى {{max}} ملفات.",
     "permissionNeeded": "الصلاحية مطلوبة",
     "photoAccess": "يرجى السماح بالوصول إلى {{source}} لإرفاق صورة.",
     "camera": "الكاميرا",
-    "photoLibrary": "مكتبة الصور"
+    "photoLibrary": "مكتبة الصور",
+    "unsupportedFile": "ملف غير مدعوم",
+    "unsupportedFileMessage": "يُسمح فقط بملفات JPG و PNG و PDF و DOC و DOCX.",
+    "fileTooLarge": "الملف كبير جدًا",
+    "fileTooLargeMessage": "الحد الأقصى لحجم الملف هو {{max}} ميجابايت."
   },
   "input": {
     "hidePassword": "إخفاء كلمة المرور",

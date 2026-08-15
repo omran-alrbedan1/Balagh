@@ -31,7 +31,7 @@ export function NotificationsScreen() {
   );
 
   const unreadCount = useMemo(
-    () => unreadCountQuery.data?.data.unread_count ?? 0,
+    () => unreadCountQuery.data?.data.count ?? 0,
     [unreadCountQuery.data],
   );
 
