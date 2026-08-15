@@ -5,8 +5,8 @@ import { Config } from '@/constants/config';
 import i18next from '@/lib/i18n';
 import { clearSession, getToken } from '@/lib/secureStorage';
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1500;
+const MAX_RETRIES = 1;
+const RETRY_DELAY_MS = 1000;
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   __retryCount?: number;
