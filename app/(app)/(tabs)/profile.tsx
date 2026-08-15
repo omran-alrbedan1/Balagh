@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import {
   Globe2,
   LogOut,
@@ -21,6 +22,7 @@ import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useLogoutAll } from '@/features/auth/hooks/useLogoutAll';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LanguageSwitcher } from '@/features/settings/components/LanguageSwitcher';
+import { NotificationPreferencesCard } from '@/features/notifications/components/NotificationPreferencesCard';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -31,8 +33,16 @@ export default function ProfileScreen() {
   const role = user?.role ?? t('profile.citizenRole');
 
   const menuItems = [
-    { icon: User, label: t('profile.personalInfo') },
-    { icon: Bell, label: t('profile.notifications') },
+    {
+      icon: User,
+      label: t('profile.personalInfo'),
+      onPress: () => router.push('/(app)/(tabs)/edit-profile'),
+    },
+    {
+      icon: Bell,
+      label: t('profile.notifications'),
+      onPress: () => router.push('/(app)/(tabs)/notifications'),
+    },
     { icon: Settings, label: t('profile.settings') },
     { icon: HelpCircle, label: t('profile.helpSupport') },
   ];
@@ -78,8 +88,11 @@ export default function ProfileScreen() {
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           return (
-            <View
+            <Pressable
               key={index}
+              accessibilityRole={item.onPress ? 'button' : undefined}
+              disabled={!item.onPress}
+              onPress={item.onPress}
               className={`flex-row items-center py-3.5 px-1 ${
                 index < menuItems.length - 1 ? 'border-b border-base-200 dark:border-base-700' : ''
               }`}
@@ -91,10 +104,12 @@ export default function ProfileScreen() {
                 {item.label}
               </Text>
               <ChevronRight color="#9CA3AF" size={18} />
-            </View>
+            </Pressable>
           );
         })}
       </Card>
+
+      <NotificationPreferencesCard />
 
       {/* Language Section */}
       <Card style={{ marginBottom: 16 }}>

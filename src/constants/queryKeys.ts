@@ -1,4 +1,8 @@
 export const queryKeys = {
+  notifications: ['notifications', 'list'] as const,
+  notificationsRoot: ['notifications'] as const,
+  notificationUnreadCount: ['notifications', 'unread-count'] as const,
+  notificationPreferences: ['notification-preferences'] as const,
   complaintStatuses: ['lookups', 'complaint-statuses'] as const,
   complaint: (id: string) => ['complaints', id] as const,
   complaints: (params?: { sort?: string; status?: string }) =>

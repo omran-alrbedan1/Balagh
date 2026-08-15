@@ -5,6 +5,7 @@
     "all": "All",
     "appVersion": "App version",
     "back": "Back",
+    "cancel": "Cancel",
     "category": "Category",
     "chooseCategory": "Choose a category",
     "chooseDepartment": "Choose a department",
@@ -266,6 +267,29 @@
     "loading": "Loading notifications",
     "emptyTitle": "No notifications",
     "emptyMessage": "You're all caught up! No new notifications.",
-    "markAllRead": "Mark all as read"
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark read",
+    "delete": "Delete",
+    "deleteTitle": "Delete notification?",
+    "deleteMessage": "This notification will be permanently removed.",
+    "openInbox": "Open notifications. {{count}} unread."
+  },
+  "notificationPreferences": {
+    "title": "Notification settings",
+    "description": "Choose which updates the Balagh service sends. Device permission is managed separately by your operating system.",
+    "loading": "Loading notification settings",
+    "osDisabled": "Push notifications are disabled in your device settings. Turning on the preference here cannot override that permission.",
+    "openSettings": "Open device settings",
+    "fields": {
+      "email_enabled": "Email notifications",
+      "push_enabled": "Push notifications",
+      "sms_enabled": "SMS notifications",
+      "complaint_created": "Complaint created",
+      "complaint_assigned": "Complaint assigned",
+      "complaint_status_updated": "Complaint status updated",
+      "sla_breached": "Service deadline breached",
+      "complaint_resolved": "Complaint resolved",
+      "complaint_closed": "Complaint closed"
+    }
   }
 }

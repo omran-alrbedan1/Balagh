@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { deleteNotification } from '@/api/endpoints/notifications.api';
+import { queryKeys } from '@/constants/queryKeys';
 
 export function useDeleteNotification() {
   const queryClient = useQueryClient();
@@ -8,8 +9,7 @@ export function useDeleteNotification() {
   return useMutation({
     mutationFn: deleteNotification,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsRoot });
     },
   });
 }

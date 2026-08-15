@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { Clock3, FilePlus2, Inbox, ShieldCheck } from 'lucide-react-native';
-import { RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Bell, Clock3, FilePlus2, Inbox, ShieldCheck } from 'lucide-react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/layout/Screen';
@@ -11,11 +11,14 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useHomeStats } from '@/features/home/hooks/useHomeStats';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
+import { useUnreadCount } from '@/features/notifications/hooks/useUnreadCount';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { data: stats, isLoading, isRefetching, refetch } = useHomeStats();
+  const unreadQuery = useUnreadCount();
+  const unreadCount = unreadQuery.data?.data.count ?? 0;
 
   return (
     <Screen
@@ -29,6 +32,21 @@ export default function HomeScreen() {
         />
       }
     >
+      <Pressable
+        accessibilityLabel={t('notifications.openInbox', { count: unreadCount })}
+        accessibilityRole="button"
+        onPress={() => router.push('/(app)/(tabs)/notifications')}
+        style={({ pressed }) => [styles.notificationEntry, pressed && styles.pressed]}
+      >
+        <Bell color={colors.primary} size={22} />
+        <Text style={styles.notificationEntryText}>{t('notifications.title')}</Text>
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+          </View>
+        )}
+      </Pressable>
+
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
           <ShieldCheck color={colors.primary} size={24} />
@@ -89,6 +107,29 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  badge: {
+    alignItems: 'center',
+    backgroundColor: colors.danger,
+    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 24,
+    minWidth: 24,
+    paddingHorizontal: 6,
+  },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
+  notificationEntry: {
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+  },
+  notificationEntryText: { color: colors.text, flex: 1, fontWeight: '800' },
+  pressed: { opacity: 0.7 },
   activityDate: {
     color: colors.textMuted,
     fontSize: 12,

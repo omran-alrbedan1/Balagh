@@ -1,6 +1,6 @@
 import { apiClient } from '@/api/client';
 import { ApiEnvelope } from '@/api/types/api-envelope.types';
-import { DeviceTokenPayload } from '@/api/types/device.types';
+import { DeviceToken, DeviceTokenListResponse, DeviceTokenPayload } from '@/api/types/device.types';
 import {
   AuthSessionResponse,
   AuthUser,
@@ -82,6 +82,16 @@ export async function logoutAll() {
 }
 
 export async function registerDeviceToken(payload: DeviceTokenPayload) {
-  const response = await apiClient.post<ApiEnvelope<null>>('/device-tokens', payload);
+  const response = await apiClient.post<ApiEnvelope<DeviceToken>>('/device-tokens', payload);
+  return response.data;
+}
+
+export async function getDeviceTokens() {
+  const response = await apiClient.get<ApiEnvelope<DeviceTokenListResponse>>('/device-tokens');
+  return response.data;
+}
+
+export async function deleteDeviceToken(deviceTokenId: string | number) {
+  const response = await apiClient.delete<ApiEnvelope<null>>(`/device-tokens/${deviceTokenId}`);
   return response.data;
 }

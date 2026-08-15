@@ -5,6 +5,54 @@ import { AuthUser } from '@/api/types/auth.types';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_USER_KEY = 'auth_user';
+const PUSH_REGISTRATION_KEY = 'push_registration';
+
+export interface StoredPushRegistration {
+  appVersion: string;
+  deviceTokenId: string | number;
+  platform: 'ios' | 'android';
+  token: string;
+  userId: string;
+}
+
+async function getStorageItem(key: string) {
+  return Platform.OS === 'web' ? localStorage.getItem(key) : SecureStore.getItemAsync(key);
+}
+
+async function setStorageItem(key: string, value: string) {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(key, value);
+    return;
+  }
+  await SecureStore.setItemAsync(key, value);
+}
+
+async function deleteStorageItem(key: string) {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(key);
+    return;
+  }
+  await SecureStore.deleteItemAsync(key);
+}
+
+export async function getPushRegistration(): Promise<StoredPushRegistration | null> {
+  const value = await getStorageItem(PUSH_REGISTRATION_KEY);
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as StoredPushRegistration;
+  } catch {
+    await deleteStorageItem(PUSH_REGISTRATION_KEY);
+    return null;
+  }
+}
+
+export async function savePushRegistration(registration: StoredPushRegistration) {
+  await setStorageItem(PUSH_REGISTRATION_KEY, JSON.stringify(registration));
+}
+
+export async function clearPushRegistration() {
+  await deleteStorageItem(PUSH_REGISTRATION_KEY);
+}
 
 export async function getToken() {
   if (Platform.OS === 'web') {

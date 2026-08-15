@@ -1,5 +1,6 @@
 import { Check, Trash2 } from 'lucide-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Notification } from '@/api/types/notification.types';
 import { colors } from '@/theme/colors';
@@ -9,43 +10,63 @@ interface NotificationCardProps {
   notification: Notification;
   onMarkAsRead?: () => void;
   onDelete?: () => void;
+  onPress?: () => void;
 }
 
-export function NotificationCard({ notification, onMarkAsRead, onDelete }: NotificationCardProps) {
+export function NotificationCard({
+  notification,
+  onMarkAsRead,
+  onDelete,
+  onPress,
+}: NotificationCardProps) {
+  const { i18n, t } = useTranslation();
   const isRead = !!notification.read_at;
 
   return (
     <View style={[styles.card, !isRead && styles.cardUnread]}>
-      <View style={styles.header}>
-        <View style={[styles.dot, !isRead && styles.dotUnread]} />
-        <Text style={styles.title} numberOfLines={2}>
-          {notification.title}
+      <Pressable
+        accessibilityLabel={`${notification.title}. ${notification.body}`}
+        accessibilityRole={onPress ? 'button' : 'text'}
+        onPress={onPress}
+        style={({ pressed }) => pressed && onPress && styles.contentPressed}
+      >
+        <View style={styles.header}>
+          <View style={[styles.dot, !isRead && styles.dotUnread]} />
+          <Text style={styles.title} numberOfLines={2}>
+            {notification.title}
+          </Text>
+        </View>
+
+        <Text style={styles.body}>{notification.body}</Text>
+
+        <Text style={styles.timestamp}>
+          {new Date(notification.created_at).toLocaleString(i18n.language)}
         </Text>
-      </View>
-
-      <Text style={styles.body} numberOfLines={3}>
-        {notification.body}
-      </Text>
-
-      <Text style={styles.timestamp}>{new Date(notification.created_at).toLocaleString()}</Text>
+      </Pressable>
 
       <View style={styles.actions}>
         {!isRead && onMarkAsRead && (
           <Pressable
             onPress={onMarkAsRead}
+            accessibilityLabel={t('notifications.markRead')}
+            accessibilityRole="button"
             style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
           >
             <Check color={colors.primary} size={16} />
-            <Text style={styles.actionButtonText}>Mark Read</Text>
+            <Text style={styles.actionButtonText}>{t('notifications.markRead')}</Text>
           </Pressable>
         )}
         {onDelete && (
           <Pressable
             onPress={onDelete}
+            accessibilityLabel={t('notifications.delete')}
+            accessibilityRole="button"
             style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
           >
             <Trash2 color={colors.danger} size={16} />
-            <Text style={[styles.actionButtonText, styles.deleteText]}>Delete</Text>
+            <Text style={[styles.actionButtonText, styles.deleteText]}>
+              {t('notifications.delete')}
+            </Text>
           </Pressable>
         )}
       </View>
@@ -92,6 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     borderColor: colors.primaryLight,
   },
+  contentPressed: { opacity: 0.7 },
   deleteText: {
     color: colors.danger,
   },

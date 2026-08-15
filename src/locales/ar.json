@@ -5,6 +5,7 @@
     "all": "الكل",
     "appVersion": "إصدار التطبيق",
     "back": "رجوع",
+    "cancel": "إلغاء",
     "category": "الفئة",
     "chooseCategory": "اختر الفئة",
     "chooseDepartment": "اختر القسم",
@@ -266,6 +267,29 @@
     "loading": "جار تحميل الإشعارات",
     "emptyTitle": "لا توجد إشعارات",
     "emptyMessage": "أنت محدث بالكامل! لا توجد إشعارات جديدة.",
-    "markAllRead": "تعيين الكل كمقروء"
+    "markAllRead": "تعيين الكل كمقروء",
+    "markRead": "تعيين كمقروء",
+    "delete": "حذف",
+    "deleteTitle": "حذف الإشعار؟",
+    "deleteMessage": "سيتم حذف هذا الإشعار نهائياً.",
+    "openInbox": "فتح الإشعارات. {{count}} غير مقروء."
+  },
+  "notificationPreferences": {
+    "title": "إعدادات الإشعارات",
+    "description": "اختر التحديثات التي يرسلها بلاغ. يدير نظام التشغيل إذن الجهاز بشكل مستقل.",
+    "loading": "جار تحميل إعدادات الإشعارات",
+    "osDisabled": "إشعارات الجهاز معطلة. لا يمكن لهذا الخيار تجاوز إذن النظام.",
+    "openSettings": "فتح إعدادات الجهاز",
+    "fields": {
+      "email_enabled": "إشعارات البريد الإلكتروني",
+      "push_enabled": "الإشعارات الفورية",
+      "sms_enabled": "الرسائل النصية",
+      "complaint_created": "إنشاء البلاغ",
+      "complaint_assigned": "إسناد البلاغ",
+      "complaint_status_updated": "تحديث حالة البلاغ",
+      "sla_breached": "تجاوز مهلة الخدمة",
+      "complaint_resolved": "حل البلاغ",
+      "complaint_closed": "إغلاق البلاغ"
+    }
   }
 }

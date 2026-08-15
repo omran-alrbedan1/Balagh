@@ -1,7 +1,10 @@
 import { ConfigContext, ExpoConfig } from 'expo/config';
 
-export default ({ config }: ConfigContext): ExpoConfig =>
-  ({
+export default ({ config }: ConfigContext): ExpoConfig => {
+  const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+  const allowCleartext = apiBaseUrl.startsWith('http://');
+
+  return {
     ...config,
     name: 'Balagh',
     slug: 'balagh',
@@ -12,11 +15,6 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
-    splash: {
-      image: './assets/splash-icon.png',
-      resizeMode: 'contain',
-      backgroundColor: '#082248',
-    },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
@@ -31,7 +29,6 @@ export default ({ config }: ConfigContext): ExpoConfig =>
     android: {
       package: 'com.balagh.app',
       googleServicesFile: './google-services.json',
-      usesCleartextTraffic: true,
       permissions: ['CAMERA', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS'],
       adaptiveIcon: {
         foregroundImage: './assets/android-icon-foreground.png',
@@ -46,6 +43,28 @@ export default ({ config }: ConfigContext): ExpoConfig =>
       'expo-dev-client',
       'expo-secure-store',
       '@sentry/react-native',
-      'expo-splash-screen',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/splash-icon.png',
+          resizeMode: 'contain',
+          backgroundColor: '#082248',
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          icon: './assets/android-icon-monochrome.png',
+          color: '#082248',
+          defaultChannel: 'default',
+        },
+      ],
+      [
+        'expo-build-properties',
+        {
+          android: { usesCleartextTraffic: allowCleartext },
+        },
+      ],
     ],
-  }) as ExpoConfig;
+  } as ExpoConfig;
+};
