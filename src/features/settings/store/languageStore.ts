@@ -9,24 +9,28 @@ import {
 interface LanguageState {
   isHydrated: boolean;
   language: AppLanguage | null;
+  requiresRestart: boolean;
   hydrate: () => Promise<void>;
-  selectLanguage: (language: AppLanguage) => Promise<void>;
+  selectLanguage: (language: AppLanguage) => Promise<boolean>;
 }
 
 export const useLanguageStore = create<LanguageState>((set) => ({
   isHydrated: false,
   language: null,
+  requiresRestart: false,
   hydrate: async () => {
     const language = await getStoredLanguage();
+    let requiresRestart = false;
 
     if (language) {
-      await applyLanguage(language);
+      requiresRestart = await applyLanguage(language);
     }
 
-    set({ language, isHydrated: true });
+    set({ language, isHydrated: true, requiresRestart });
   },
   selectLanguage: async (language) => {
-    await applyLanguage(language);
-    set({ language, isHydrated: true });
+    const requiresRestart = await applyLanguage(language);
+    set({ language, isHydrated: true, requiresRestart });
+    return requiresRestart;
   },
 }));

@@ -1,13 +1,13 @@
 import * as Location from 'expo-location';
+import { Camera, Map, Marker } from '@maplibre/maplibre-react-native';
 import { MapPin } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import MapView, { Marker, Region } from 'react-native-maps';
 
 import { Input } from '@/components/ui/Input';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
-import { isMapSelectionEnabled } from '@/features/complaints/utils/mapCapability';
+import { OPEN_FREE_MAP_STYLE_URL } from '@/features/complaints/utils/mapCapability';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -20,12 +20,24 @@ export function LocationPicker() {
   const [manualMode, setManualMode] = useState(false);
   const [mapVisible, setMapVisible] = useState(false);
   const [mapUnavailable, setMapUnavailable] = useState(false);
-  const mapsEnabled = isMapSelectionEnabled();
+  const [mapReady, setMapReady] = useState(false);
   const initialCoordinate =
     location && location.lat !== 0 && location.lng !== 0
       ? { latitude: location.lat, longitude: location.lng }
       : { latitude: 33.5138, longitude: 36.2765 };
   const [selectedCoordinate, setSelectedCoordinate] = useState(initialCoordinate);
+
+  useEffect(() => {
+    if (!mapVisible || mapReady) return;
+
+    const timeout = setTimeout(() => {
+      setMapVisible(false);
+      setMapUnavailable(true);
+      setManualMode(true);
+    }, 15_000);
+
+    return () => clearTimeout(timeout);
+  }, [mapReady, mapVisible]);
 
   const handleUseCurrentLocation = async () => {
     setLoading(true);
@@ -55,6 +67,7 @@ export function LocationPicker() {
         lng: longitude,
         address: resolvedAddress,
       });
+      setSelectedCoordinate({ latitude, longitude });
       setAddress(resolvedAddress);
     } catch {
       setManualMode(true);
@@ -92,22 +105,34 @@ export function LocationPicker() {
     }
   };
 
-  const handleChooseOnMap = () => {
-    if (!mapsEnabled) {
+  const handleChooseOnMap = async () => {
+    if (mapVisible) {
       setMapVisible(false);
-      setMapUnavailable(true);
-      setManualMode(true);
       return;
     }
 
     setMapUnavailable(false);
-    setMapVisible((visible) => !visible);
-  };
+    setMapReady(false);
 
-  const region: Region = {
-    ...selectedCoordinate,
-    latitudeDelta: 0.04,
-    longitudeDelta: 0.04,
+    const hasExistingCoordinate = location && location.lat !== 0 && location.lng !== 0;
+    if (!hasExistingCoordinate) {
+      try {
+        const permission = await Location.getForegroundPermissionsAsync();
+        if (permission.granted) {
+          const lastKnown = await Location.getLastKnownPositionAsync();
+          if (lastKnown) {
+            setSelectedCoordinate({
+              latitude: lastKnown.coords.latitude,
+              longitude: lastKnown.coords.longitude,
+            });
+          }
+        }
+      } catch {
+        // Opening the map never depends on location services being available.
+      }
+    }
+
+    setMapVisible(true);
   };
 
   return (
@@ -127,23 +152,60 @@ export function LocationPicker() {
         )}
       </Pressable>
 
-      <Pressable accessibilityRole="button" onPress={handleChooseOnMap} style={styles.mapButton}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => void handleChooseOnMap()}
+        style={styles.mapButton}
+      >
         <MapPin color={colors.primary} size={18} />
         <Text style={styles.mapButtonText}>{t('complaints.chooseOnMap')}</Text>
       </Pressable>
 
       {mapUnavailable ? <Text style={styles.helper}>{t('complaints.mapUnavailable')}</Text> : null}
 
-      {mapsEnabled && mapVisible ? (
+      {mapVisible ? (
         <View style={styles.mapContainer}>
           <Text style={styles.helper}>{t('complaints.mapHint')}</Text>
-          <MapView
-            initialRegion={region}
-            onPress={({ nativeEvent }) => setSelectedCoordinate(nativeEvent.coordinate)}
-            style={styles.map}
-          >
-            <Marker coordinate={selectedCoordinate} />
-          </MapView>
+          <View style={styles.mapFrame}>
+            <Map
+              attribution
+              mapStyle={OPEN_FREE_MAP_STYLE_URL}
+              onDidFailLoadingMap={() => {
+                setMapVisible(false);
+                setMapUnavailable(true);
+                setManualMode(true);
+              }}
+              onDidFinishLoadingMap={() => setMapReady(true)}
+              onPress={({ nativeEvent }) => {
+                const [longitude, latitude] = nativeEvent.lngLat;
+                setSelectedCoordinate({ latitude, longitude });
+              }}
+              style={styles.map}
+              testID="complaint-location-map"
+            >
+              <Camera
+                initialViewState={{
+                  center: [selectedCoordinate.longitude, selectedCoordinate.latitude],
+                  zoom: 13,
+                }}
+                testID="complaint-location-camera"
+              />
+              <Marker
+                id="selected-complaint-location"
+                lngLat={[selectedCoordinate.longitude, selectedCoordinate.latitude]}
+                testID="complaint-location-marker"
+              >
+                <View style={styles.marker}>
+                  <MapPin color="#FFFFFF" size={18} />
+                </View>
+              </Marker>
+            </Map>
+            {!mapReady ? (
+              <View pointerEvents="none" style={styles.mapLoading}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : null}
+          </View>
           <Pressable
             accessibilityRole="button"
             disabled={loading}
@@ -237,6 +299,32 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     gap: spacing.sm,
+  },
+  mapFrame: {
+    borderRadius: 8,
+    height: 260,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  mapLoading: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  marker: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 2,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
   locationMeta: {
     color: colors.textMuted,

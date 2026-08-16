@@ -3,16 +3,15 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
   const allowCleartext = apiBaseUrl.startsWith('http://');
-  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
-  const mapsEnabled = Boolean(googleMapsApiKey);
 
   return {
     ...config,
     name: 'Balagh',
     slug: 'balagh',
+    newArchEnabled: true,
     version: '1.0.0',
     runtimeVersion: {
-      policy: 'appVersion',
+      policy: 'fingerprint',
     },
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -32,6 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       package: 'com.balagh.app',
       googleServicesFile: './google-services.json',
       permissions: ['CAMERA', 'ACCESS_FINE_LOCATION', 'POST_NOTIFICATIONS'],
+      softwareKeyboardLayoutMode: 'resize',
       adaptiveIcon: {
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
@@ -39,15 +39,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: '#082248',
       },
     },
-    extra: {
-      ...config.extra,
-      mapsEnabled,
-    },
     scheme: 'balagh',
     plugins: [
       'expo-router',
       'expo-dev-client',
       'expo-secure-store',
+      '@maplibre/maplibre-react-native',
       [
         'expo-splash-screen',
         {
@@ -64,9 +61,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           defaultChannel: 'default',
         },
       ],
-      ...(googleMapsApiKey
-        ? [['react-native-maps', { androidGoogleMapsApiKey: googleMapsApiKey }]]
-        : []),
       [
         'expo-build-properties',
         {

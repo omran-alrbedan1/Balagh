@@ -7,6 +7,7 @@ import { APP_VERSION } from '@/constants/appInfo';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useLogoutAll } from '@/features/auth/hooks/useLogoutAll';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -128,6 +129,7 @@ export default function ProfileScreen() {
 
       {/* Logout Button */}
       <Button
+        disabled={logoutAll.isPending}
         label={t('profile.logout')}
         iconLeft={<LogOut color="#DC2626" size={18} />}
         loading={logout.isPending}
@@ -138,6 +140,7 @@ export default function ProfileScreen() {
       {/* Logout All Button */}
       <View className="mt-2">
         <Button
+          disabled={logout.isPending}
           label={t('profile.logoutAll')}
           iconLeft={<LogOut color="#DC2626" size={18} />}
           loading={logoutAll.isPending}
@@ -145,6 +148,7 @@ export default function ProfileScreen() {
           variant="danger"
         />
       </View>
+      {logoutAll.error ? <ErrorState message={logoutAll.error.message} /> : null}
     </Screen>
   );
 }

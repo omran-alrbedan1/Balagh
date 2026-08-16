@@ -38,7 +38,7 @@ export default function NewComplaintScreen() {
   };
 
   return (
-    <Screen subtitle={t('complaints.newSubtitle')} title={t('complaints.newTitle')}>
+    <Screen keyboardAware subtitle={t('complaints.newSubtitle')} title={t('complaints.newTitle')}>
       <Animated.View entering={FadeIn.duration(260)}>
         <StepIndicator current={step} />
       </Animated.View>

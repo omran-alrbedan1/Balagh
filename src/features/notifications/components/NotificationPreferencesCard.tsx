@@ -52,6 +52,9 @@ export function NotificationPreferencesCard() {
   }, []);
 
   if (query.isLoading) return <LoadingSpinner label={t('notificationPreferences.loading')} />;
+  if (query.isPending && query.fetchStatus === 'paused') {
+    return <ErrorState message={t('notificationPreferences.offlineUnavailable')} />;
+  }
   if (query.error) {
     return (
       <View style={styles.error}>
@@ -62,12 +65,21 @@ export function NotificationPreferencesCard() {
   }
 
   const preferences = query.data?.data;
-  if (!preferences) return null;
+  if (!preferences) {
+    return (
+      <View style={styles.error}>
+        <ErrorState message={t('notificationPreferences.unavailable')} />
+        <Button label={t('common.tryAgain')} onPress={() => void query.refetch()} />
+      </View>
+    );
+  }
 
   return (
     <Card>
       <Text style={styles.title}>{t('notificationPreferences.title')}</Text>
       <Text style={styles.description}>{t('notificationPreferences.description')}</Text>
+      <Text style={styles.capabilityNote}>{t('notificationPreferences.channelAvailability')}</Text>
+      <Text style={styles.capabilityNote}>{t('notificationPreferences.inAppAlwaysOn')}</Text>
 
       {preferenceKeys.map((key) => (
         <View key={key} style={styles.row}>
@@ -83,7 +95,7 @@ export function NotificationPreferencesCard() {
         </View>
       ))}
 
-      {osPermissionGranted === false && (
+      {preferences.push_enabled && osPermissionGranted === false && (
         <View style={styles.permissionWarning}>
           <Text style={styles.warningText}>{t('notificationPreferences.osDisabled')}</Text>
           <Button
@@ -100,6 +112,7 @@ export function NotificationPreferencesCard() {
 }
 
 const styles = StyleSheet.create({
+  capabilityNote: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
   description: { color: colors.textMuted, lineHeight: 20 },
   error: { gap: spacing.md },
   label: { color: colors.text, flex: 1, fontSize: 14, fontWeight: '600' },

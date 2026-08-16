@@ -1,6 +1,7 @@
 import { registerDeviceToken } from '@/api/endpoints/auth.api';
 import * as Notifications from 'expo-notifications';
 import { act, render, waitFor } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 import { acquireExpoPushToken } from '@/features/notifications/hooks/usePushRegistration';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { queryClient } from '@/lib/queryClient';
@@ -42,6 +43,7 @@ const register = registerDeviceToken as jest.MockedFunction<typeof registerDevic
 const getStored = getPushRegistration as jest.MockedFunction<typeof getPushRegistration>;
 const saveStored = savePushRegistration as jest.MockedFunction<typeof savePushRegistration>;
 const notifications = Notifications as jest.Mocked<typeof Notifications>;
+const addAppStateListener = jest.spyOn(AppState, 'addEventListener');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -74,6 +76,7 @@ beforeEach(() => {
   notifications.addNotificationReceivedListener.mockImplementation(subscription);
   notifications.addNotificationResponseReceivedListener.mockImplementation(subscription);
   notifications.addPushTokenListener.mockImplementation(subscription);
+  addAppStateListener.mockReturnValue({ remove: jest.fn() });
 });
 
 it('does not register for a logged-out user', async () => {
@@ -126,6 +129,17 @@ it('invalidates the inbox and refreshes unread count for a foreground notificati
   await act(async () => listener({} as Notifications.Notification));
   expect(invalidate).toHaveBeenCalled();
   expect(fetch).toHaveBeenCalled();
+});
+
+it('retries device registration after returning from OS notification settings', async () => {
+  render(<PushNotificationGate />);
+  await waitFor(() => expect(saveStored).toHaveBeenCalledTimes(1));
+  await act(async () => Promise.resolve());
+  const listener = addAppStateListener.mock.calls[0][1];
+
+  act(() => listener('active'));
+
+  await waitFor(() => expect(acquire).toHaveBeenCalledTimes(2));
 });
 
 it('handles a response once and removes all runtime listeners on cleanup', async () => {

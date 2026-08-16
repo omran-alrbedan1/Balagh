@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { AppState, Linking } from 'react-native';
 
 import {
   useNotificationPreferences,
@@ -65,10 +66,25 @@ it('loads and displays backend notification preferences', () => {
   expect(view.getByLabelText('notificationPreferences.fields.push_enabled')).toBeTruthy();
 });
 
-it('patches the changed preference only', () => {
+it.each([
+  'push_enabled',
+  'email_enabled',
+  'sms_enabled',
+  'complaint_created',
+  'complaint_assigned',
+  'complaint_status_updated',
+  'sla_breached',
+  'complaint_resolved',
+  'complaint_closed',
+] as const)('patches only the changed %s preference', (field) => {
   const view = render(<NotificationPreferencesCard />);
-  fireEvent(view.getByLabelText('notificationPreferences.fields.sms_enabled'), 'valueChange', true);
-  expect(mutate).toHaveBeenCalledWith({ sms_enabled: true });
+  const nextValue = !preferences[field];
+  fireEvent(
+    view.getByLabelText(`notificationPreferences.fields.${field}`),
+    'valueChange',
+    nextValue,
+  );
+  expect(mutate).toHaveBeenCalledWith({ [field]: nextValue });
 });
 
 it('renders a retry state when loading fails', () => {
@@ -82,7 +98,24 @@ it('renders a retry state when loading fails', () => {
   expect(view.getByText('common.tryAgain')).toBeTruthy();
 });
 
+it('does not pretend server settings loaded while the initial query is paused offline', () => {
+  usePreferences.mockReturnValue({
+    data: undefined,
+    error: null,
+    fetchStatus: 'paused',
+    isLoading: false,
+    isPending: true,
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof useNotificationPreferences>);
+
+  const view = render(<NotificationPreferencesCard />);
+
+  expect(view.getByText('notificationPreferences.offlineUnavailable')).toBeTruthy();
+  expect(view.queryByLabelText('notificationPreferences.fields.push_enabled')).toBeNull();
+});
+
 it('separately explains denied OS push permission and offers settings', async () => {
+  const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
   getPermissions.mockResolvedValue({
     granted: false,
     canAskAgain: false,
@@ -91,5 +124,49 @@ it('separately explains denied OS push permission and offers settings', async ()
   } as Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>);
   const view = render(<NotificationPreferencesCard />);
   await waitFor(() => expect(view.getByText('notificationPreferences.osDisabled')).toBeTruthy());
-  expect(view.getByText('notificationPreferences.openSettings')).toBeTruthy();
+  fireEvent.press(view.getByText('notificationPreferences.openSettings'));
+  expect(openSettings).toHaveBeenCalledTimes(1);
+});
+
+it('refreshes OS permission after returning from device settings', async () => {
+  let onAppStateChange: ((state: string) => void) | undefined;
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
+    onAppStateChange = listener as (state: string) => void;
+    return { remove: jest.fn() };
+  });
+  getPermissions
+    .mockResolvedValueOnce({ granted: false } as never)
+    .mockResolvedValueOnce({ granted: true } as never);
+  const view = render(<NotificationPreferencesCard />);
+  await waitFor(() => expect(view.getByText('notificationPreferences.osDisabled')).toBeTruthy());
+
+  onAppStateChange?.('active');
+
+  await waitFor(() => expect(view.queryByText('notificationPreferences.osDisabled')).toBeNull());
+});
+
+it('does not imply an OS permission problem when backend push is disabled', async () => {
+  getPermissions.mockResolvedValue({ granted: false } as never);
+  usePreferences.mockReturnValue({
+    isLoading: false,
+    error: null,
+    data: { success: true, data: { ...preferences, push_enabled: false } },
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof useNotificationPreferences>);
+
+  const view = render(<NotificationPreferencesCard />);
+  await waitFor(() => expect(getPermissions).toHaveBeenCalled());
+  expect(view.queryByText('notificationPreferences.osDisabled')).toBeNull();
+});
+
+it('shows a failed mutation and leaves switches bound to server query state', () => {
+  useUpdate.mockReturnValue({
+    isPending: false,
+    error: new Error('save failed'),
+    mutate,
+  } as unknown as ReturnType<typeof useUpdateNotificationPreferences>);
+  const view = render(<NotificationPreferencesCard />);
+
+  expect(view.getByText('save failed')).toBeTruthy();
+  expect(view.getByLabelText('notificationPreferences.fields.sms_enabled').props.value).toBe(false);
 });

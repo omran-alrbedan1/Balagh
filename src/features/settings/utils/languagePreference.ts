@@ -29,9 +29,21 @@ export async function getStoredLanguage() {
 
 export async function applyLanguage(code: AppLanguage) {
   const language = APP_LANGUAGES.find((item) => item.code === code) ?? APP_LANGUAGES[0];
+  const previousStoredLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
 
   await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, code);
-  await i18next.changeLanguage(code);
+  try {
+    await i18next.changeLanguage(code);
+  } catch (error) {
+    if (previousStoredLanguage) {
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, previousStoredLanguage).catch(
+        () => undefined,
+      );
+    } else {
+      await AsyncStorage.removeItem(LANGUAGE_STORAGE_KEY).catch(() => undefined);
+    }
+    throw error;
+  }
 
   if (I18nManager.isRTL !== language.rtl) {
     I18nManager.allowRTL(language.rtl);
@@ -40,7 +52,10 @@ export async function applyLanguage(code: AppLanguage) {
     try {
       await Updates.reloadAsync();
     } catch {
-      // Reload is unavailable in some web/dev contexts.
+      // Text has changed, but native direction cannot fully change until restart.
+      return true;
     }
   }
+
+  return false;
 }

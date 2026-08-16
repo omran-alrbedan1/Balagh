@@ -162,6 +162,8 @@ export const inputStyles = StyleSheet.create({
   feedback: {
     fontSize: 13,
     lineHeight: 18,
+    textAlign: 'auto',
+    writingDirection: 'auto',
   },
   helper: {
     color: colors.textMuted,
@@ -183,6 +185,8 @@ export const inputStyles = StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
     paddingVertical: 0,
+    textAlign: 'auto',
+    writingDirection: 'auto',
   },
   inputError: {
     borderColor: colors.danger,
@@ -202,6 +206,8 @@ export const inputStyles = StyleSheet.create({
     color: colors.text,
     fontSize: 14,
     fontWeight: '700',
+    textAlign: 'auto',
+    writingDirection: 'auto',
   },
   textarea: {
     minHeight: 104,

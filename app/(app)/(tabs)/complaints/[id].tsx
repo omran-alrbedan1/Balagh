@@ -55,6 +55,7 @@ export default function ComplaintDetailScreen() {
 
   return (
     <Screen
+      keyboardAware
       refreshControl={
         complaintId ? (
           <RefreshControl

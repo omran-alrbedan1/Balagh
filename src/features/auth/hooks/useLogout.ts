@@ -5,6 +5,7 @@ import { logout } from '@/api/endpoints/auth.api';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { cleanupDeviceTokenForUser } from '@/features/notifications/utils/deviceTokenLifecycle';
 import { queryClient } from '@/lib/queryClient';
+import { clearPersistedPrivateQueries } from '@/lib/queryPersistence';
 
 export function useLogout() {
   const clear = useAuthStore((state) => state.clear);
@@ -16,6 +17,7 @@ export function useLogout() {
       return logout();
     },
     onSettled: async () => {
+      await clearPersistedPrivateQueries(userId);
       await clear();
       queryClient.clear();
       router.replace('/(auth)/login');

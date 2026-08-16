@@ -82,6 +82,8 @@
     "haveAccount": "Already have an account?"
   },
   "language": {
+    "changeFailed": "Unable to change language. Please try again.",
+    "restartRequired": "Restart the app to finish applying the new text direction.",
     "choose": "Choose your language",
     "chooseArabic": "اختر لغتك",
     "english": "English",
@@ -344,7 +346,11 @@
   "notificationPreferences": {
     "title": "Notification settings",
     "description": "Choose which updates the Balagh service sends. Device permission is managed separately by your operating system.",
+    "channelAvailability": "Email is sent for supported complaint events. Push and SMS delivery also require those services to be enabled by the administrator.",
+    "inAppAlwaysOn": "Your in-app notification history remains available. Event switches control external delivery channels.",
     "loading": "Loading notification settings",
+    "offlineUnavailable": "Notification settings need an internet connection. Reconnect to load the latest server state.",
+    "unavailable": "Unable to load notification settings.",
     "osDisabled": "Push notifications are disabled in your device settings. Turning on the preference here cannot override that permission.",
     "openSettings": "Open device settings",
     "fields": {

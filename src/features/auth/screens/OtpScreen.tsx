@@ -2,19 +2,11 @@ import { useEffect, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { RefreshCw, ShieldCheck } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
+import { KeyboardAwareFormScrollView } from '@/components/layout/KeyboardAwareFormScrollView';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import { OtpInput } from '@/features/auth/components/OtpInput';
@@ -90,85 +82,80 @@ export function OtpScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboard}
+      <KeyboardAwareFormScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <View style={styles.logoWrap}>
-              <Image
-                accessibilityIgnoresInvertColors
-                resizeMode="contain"
-                source={require('../../../../assets/logo.png')}
-                style={styles.logo}
+        <View style={styles.header}>
+          <View style={styles.logoWrap}>
+            <Image
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              source={require('../../../../assets/logo.png')}
+              style={styles.logo}
+            />
+          </View>
+          <Text style={styles.appName}>{t('appName')}</Text>
+          <Text style={styles.title}>{t('auth.verifyCode')}</Text>
+          <Text style={styles.subtitle}>
+            {t('auth.verifyCodeBody', {
+              target: purpose === 'register' ? t('auth.verifyPhone') : t('auth.verifyDevice'),
+            })}
+          </Text>
+        </View>
+
+        <View style={styles.formCard}>
+          <View style={styles.iconBadge}>
+            <ShieldCheck color={colors.primary} size={28} />
+          </View>
+
+          {devOtp ? (
+            <View style={styles.devOtpBox}>
+              <Text style={styles.devOtpText}>{t('auth.devOtp', { otp: devOtp })}</Text>
+            </View>
+          ) : null}
+
+          {requestError ? <ErrorState message={requestError} /> : null}
+
+          <OtpInput
+            onChangeText={setOtp}
+            onSubmitEditing={onSubmit}
+            returnKeyType="done"
+            value={otp}
+          />
+
+          <SubmitButton
+            disabled={otp.length !== 6}
+            isSubmitting={verifyOtpMutation.isPending}
+            label={t('auth.verify')}
+            onPress={onSubmit}
+          />
+
+          {countdown > 0 ? (
+            <Text style={styles.resendText}>{t('auth.resendIn', { seconds: countdown })}</Text>
+          ) : (
+            <Pressable
+              onPress={handleResendOtp}
+              disabled={resendOtpMutation.isPending}
+              style={({ pressed }) => [
+                styles.resendButton,
+                pressed ? styles.resendButtonPressed : null,
+                resendOtpMutation.isPending ? styles.resendButtonDisabled : null,
+              ]}
+            >
+              <RefreshCw
+                color={resendOtpMutation.isPending ? colors.textMuted : colors.primary}
+                size={16}
+                style={styles.resendIcon}
               />
-            </View>
-            <Text style={styles.appName}>{t('appName')}</Text>
-            <Text style={styles.title}>{t('auth.verifyCode')}</Text>
-            <Text style={styles.subtitle}>
-              {t('auth.verifyCodeBody', {
-                target: purpose === 'register' ? t('auth.verifyPhone') : t('auth.verifyDevice'),
-              })}
-            </Text>
-          </View>
-
-          <View style={styles.formCard}>
-            <View style={styles.iconBadge}>
-              <ShieldCheck color={colors.primary} size={28} />
-            </View>
-
-            {devOtp ? (
-              <View style={styles.devOtpBox}>
-                <Text style={styles.devOtpText}>{t('auth.devOtp', { otp: devOtp })}</Text>
-              </View>
-            ) : null}
-
-            {requestError ? <ErrorState message={requestError} /> : null}
-
-            <OtpInput
-              onChangeText={setOtp}
-              onSubmitEditing={onSubmit}
-              returnKeyType="done"
-              value={otp}
-            />
-
-            <SubmitButton
-              disabled={otp.length !== 6}
-              isSubmitting={verifyOtpMutation.isPending}
-              label={t('auth.verify')}
-              onPress={onSubmit}
-            />
-
-            {countdown > 0 ? (
-              <Text style={styles.resendText}>{t('auth.resendIn', { seconds: countdown })}</Text>
-            ) : (
-              <Pressable
-                onPress={handleResendOtp}
-                disabled={resendOtpMutation.isPending}
-                style={({ pressed }) => [
-                  styles.resendButton,
-                  pressed ? styles.resendButtonPressed : null,
-                  resendOtpMutation.isPending ? styles.resendButtonDisabled : null,
-                ]}
-              >
-                <RefreshCw
-                  color={resendOtpMutation.isPending ? colors.textMuted : colors.primary}
-                  size={16}
-                  style={styles.resendIcon}
-                />
-                <Text style={styles.resendButtonText}>
-                  {resendOtpMutation.isPending ? t('auth.resending') : t('auth.resendCode')}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <Text style={styles.resendButtonText}>
+                {resendOtpMutation.isPending ? t('auth.resending') : t('auth.resendCode')}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </KeyboardAwareFormScrollView>
     </SafeAreaView>
   );
 }
@@ -228,9 +215,6 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     width: 56,
-  },
-  keyboard: {
-    flex: 1,
   },
   logo: {
     height: 72,

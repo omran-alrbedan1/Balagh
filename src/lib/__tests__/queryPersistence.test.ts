@@ -2,7 +2,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient } from '@tanstack/react-query';
 
-import { hydratePersistedQueries, startQueryPersistence } from '@/lib/queryPersistence';
+import {
+  clearPersistedPrivateQueries,
+  hydratePersistedQueries,
+  startQueryPersistence,
+} from '@/lib/queryPersistence';
 import { getStoredUser } from '@/lib/secureStorage';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -90,4 +94,14 @@ it('discards legacy unscoped complaint cache entries without removing dashboard 
   });
   legacyClient.clear();
   restartedClient.clear();
+});
+
+it('removes the authenticated user private cache on logout', async () => {
+  await AsyncStorage.setItem('balagh.queryCache.user.v1.user-1', 'private');
+  await AsyncStorage.setItem('balagh.queryCache.user.v1.user-2', 'other-user');
+
+  await clearPersistedPrivateQueries('user-1');
+
+  expect(await AsyncStorage.getItem('balagh.queryCache.user.v1.user-1')).toBeNull();
+  expect(await AsyncStorage.getItem('balagh.queryCache.user.v1.user-2')).toBe('other-user');
 });

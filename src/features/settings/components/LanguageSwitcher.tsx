@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import i18next from '@/lib/i18n';
@@ -8,13 +9,25 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function LanguageSwitcher() {
+  const { t } = useTranslation();
   const storeLanguage = useLanguageStore((state) => state.language);
+  const requiresRestart = useLanguageStore((state) => state.requiresRestart);
   const selectLanguage = useLanguageStore((state) => state.selectLanguage);
-  const [current, setCurrent] = useState(storeLanguage ?? i18next.language);
+  const [pendingLanguage, setPendingLanguage] = useState<AppLanguage | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const current: AppLanguage = storeLanguage ?? (i18next.language?.startsWith('ar') ? 'ar' : 'en');
 
   const handleSelect = async (code: AppLanguage) => {
-    await selectLanguage(code);
-    setCurrent(code);
+    if (code === current || pendingLanguage) return;
+    setPendingLanguage(code);
+    setError(null);
+    try {
+      await selectLanguage(code);
+    } catch {
+      setError(t('language.changeFailed'));
+    } finally {
+      setPendingLanguage(null);
+    }
   };
 
   return (
@@ -25,7 +38,8 @@ export function LanguageSwitcher() {
         return (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
+            accessibilityState={{ disabled: pendingLanguage != null, selected: isSelected }}
+            disabled={pendingLanguage != null}
             key={language.code}
             onPress={() => void handleSelect(language.code)}
             style={[styles.option, isSelected ? styles.selected : null]}
@@ -36,6 +50,8 @@ export function LanguageSwitcher() {
           </Pressable>
         );
       })}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {requiresRestart ? <Text style={styles.notice}>{t('language.restartRequired')}</Text> : null}
     </View>
   );
 }
@@ -43,7 +59,18 @@ export function LanguageSwitcher() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  error: {
+    color: colors.danger,
+    flexBasis: '100%',
+    fontSize: 13,
+  },
+  notice: {
+    color: colors.warning,
+    flexBasis: '100%',
+    fontSize: 13,
   },
   option: {
     alignItems: 'center',

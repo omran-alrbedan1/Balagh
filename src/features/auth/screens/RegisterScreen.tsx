@@ -4,20 +4,11 @@ import { LockKeyhole, Mail, Phone, UserRound, IdCard } from 'lucide-react-native
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
+import { KeyboardAwareFormScrollView } from '@/components/layout/KeyboardAwareFormScrollView';
 import { ControlledInput } from '@/components/ui/ControlledInput';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useRegister } from '@/features/auth/hooks/useRegister';
@@ -76,106 +67,101 @@ export function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboard}
+      <KeyboardAwareFormScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <View style={styles.logoWrap}>
-              <Image
-                accessibilityIgnoresInvertColors
-                resizeMode="contain"
-                source={require('../../../../assets/logo.png')}
-                style={styles.logo}
-              />
-            </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>{t('auth.createAccount')}</Text>
-              <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
-            </View>
+        <View style={styles.header}>
+          <View style={styles.logoWrap}>
+            <Image
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              source={require('../../../../assets/logo.png')}
+              style={styles.logo}
+            />
           </View>
-
-          <View style={styles.formCard}>
-            {requestError ? <ErrorState message={requestError} /> : null}
-
-            <ControlledInput
-              control={control}
-              label={t('common.fullName')}
-              leftIcon={<UserRound color={colors.textMuted} size={20} />}
-              name="name"
-              type="text"
-            />
-            <ControlledInput
-              control={control}
-              label={t('common.email')}
-              leftIcon={<Mail color={colors.textMuted} size={20} />}
-              name="email"
-              type="email"
-            />
-            <ControlledInput
-              control={control}
-              label={t('common.phone')}
-              leftIcon={<Phone color={colors.textMuted} size={20} />}
-              name="phone"
-              type="phone"
-            />
-            <ControlledInput
-              control={control}
-              label={t('common.nationalId')}
-              leftIcon={<IdCard color={colors.textMuted} size={20} />}
-              name="national_id"
-              type="text"
-            />
-            <ControlledInput
-              control={control}
-              label={t('common.password')}
-              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-              name="password"
-              type="password"
-            />
-            <ControlledInput
-              control={control}
-              label={t('auth.confirmPassword')}
-              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-              name="password_confirmation"
-              type="password"
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.86}
-              accessibilityRole="button"
-              accessibilityState={{
-                busy: registerMutation.isPending,
-                disabled: registerMutation.isPending,
-              }}
-              disabled={registerMutation.isPending}
-              onPress={() => void handleSubmit(onSubmit)()}
-              style={[
-                styles.submitButton,
-                registerMutation.isPending ? styles.submitButtonDisabled : null,
-              ]}
-            >
-              <Text style={styles.submitButtonText}>
-                {registerMutation.isPending ? t('auth.creatingAccount') : t('auth.createAccount')}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>{t('auth.createAccount')}</Text>
+            <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
           </View>
+        </View>
 
-          <Pressable
+        <View style={styles.formCard}>
+          {requestError ? <ErrorState message={requestError} /> : null}
+
+          <ControlledInput
+            control={control}
+            label={t('common.fullName')}
+            leftIcon={<UserRound color={colors.textMuted} size={20} />}
+            name="name"
+            type="text"
+          />
+          <ControlledInput
+            control={control}
+            label={t('common.email')}
+            leftIcon={<Mail color={colors.textMuted} size={20} />}
+            name="email"
+            type="email"
+          />
+          <ControlledInput
+            control={control}
+            label={t('common.phone')}
+            leftIcon={<Phone color={colors.textMuted} size={20} />}
+            name="phone"
+            type="phone"
+          />
+          <ControlledInput
+            control={control}
+            label={t('common.nationalId')}
+            leftIcon={<IdCard color={colors.textMuted} size={20} />}
+            name="national_id"
+            type="text"
+          />
+          <ControlledInput
+            control={control}
+            label={t('common.password')}
+            leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+            name="password"
+            type="password"
+          />
+          <ControlledInput
+            control={control}
+            label={t('auth.confirmPassword')}
+            leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+            name="password_confirmation"
+            type="password"
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.86}
             accessibilityRole="button"
-            onPress={() => router.push('/(auth)/login')}
-            style={({ pressed }) => [styles.loginLink, pressed ? styles.linkPressed : null]}
+            accessibilityState={{
+              busy: registerMutation.isPending,
+              disabled: registerMutation.isPending,
+            }}
+            disabled={registerMutation.isPending}
+            onPress={() => void handleSubmit(onSubmit)()}
+            style={[
+              styles.submitButton,
+              registerMutation.isPending ? styles.submitButtonDisabled : null,
+            ]}
           >
-            <Text style={styles.loginMuted}>{t('auth.haveAccount')} </Text>
-            <Text style={styles.loginText}>{t('auth.login')}</Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            <Text style={styles.submitButtonText}>
+              {registerMutation.isPending ? t('auth.creatingAccount') : t('auth.createAccount')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/(auth)/login')}
+          style={({ pressed }) => [styles.loginLink, pressed ? styles.linkPressed : null]}
+        >
+          <Text style={styles.loginMuted}>{t('auth.haveAccount')} </Text>
+          <Text style={styles.loginText}>{t('auth.login')}</Text>
+        </Pressable>
+      </KeyboardAwareFormScrollView>
     </SafeAreaView>
   );
 }
@@ -214,9 +200,6 @@ const styles = StyleSheet.create({
   headerText: {
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  keyboard: {
-    flex: 1,
   },
   linkPressed: {
     opacity: 0.72,

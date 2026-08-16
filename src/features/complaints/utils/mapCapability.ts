@@ -1,5 +1,1 @@
-import Constants from 'expo-constants';
-
-export function isMapSelectionEnabled(): boolean {
-  return Constants.expoConfig?.extra?.mapsEnabled === true;
-}
+export const OPEN_FREE_MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';

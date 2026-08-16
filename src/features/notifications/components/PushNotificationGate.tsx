@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { registerDeviceToken } from '@/api/endpoints/auth.api';
 import { getUnreadCount as fetchUnreadCount } from '@/api/endpoints/notifications.api';
@@ -105,6 +105,11 @@ export function PushNotificationGate() {
   }, [userId]);
 
   useEffect(() => {
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && userId != null) {
+        void safelyRegister(String(userId));
+      }
+    });
     const receivedSubscription = Notifications.addNotificationReceivedListener(() => {
       void synchronizeNotificationQueries().catch((error) => {
         if (__DEV__) console.warn('Unable to refresh notification state.', error);
@@ -130,6 +135,7 @@ export function PushNotificationGate() {
     });
 
     return () => {
+      appStateSubscription.remove();
       receivedSubscription.remove();
       responseSubscription.remove();
       tokenSubscription.remove();

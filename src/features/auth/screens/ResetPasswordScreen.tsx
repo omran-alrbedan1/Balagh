@@ -4,20 +4,11 @@ import { ArrowLeft, KeyRound, LockKeyhole } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import {
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/api/client';
+import { KeyboardAwareFormScrollView } from '@/components/layout/KeyboardAwareFormScrollView';
 import { ControlledInput } from '@/components/ui/ControlledInput';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useResetPassword } from '@/features/auth/hooks/useResetPassword';
@@ -63,94 +54,89 @@ export function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboard}
+      <KeyboardAwareFormScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft color={colors.text} size={24} />
-          </Pressable>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft color={colors.text} size={24} />
+        </Pressable>
 
-          <View style={styles.header}>
-            <View style={styles.logoWrap}>
-              <Image
-                accessibilityIgnoresInvertColors
-                resizeMode="contain"
-                source={require('../../../../assets/logo.png')}
-                style={styles.logo}
-              />
-            </View>
-            <View style={styles.headerText}>
-              <Text style={styles.appName}>{t('appName')}</Text>
-              <Text style={styles.title}>{t('auth.resetPassword')}</Text>
-              <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
-            </View>
+        <View style={styles.header}>
+          <View style={styles.logoWrap}>
+            <Image
+              accessibilityIgnoresInvertColors
+              resizeMode="contain"
+              source={require('../../../../assets/logo.png')}
+              style={styles.logo}
+            />
           </View>
-
-          <View style={styles.formCard}>
-            {requestError ? <ErrorState message={requestError} /> : null}
-
-            <ControlledInput
-              autoCapitalize="none"
-              control={control}
-              label={t('common.email')}
-              leftIcon={<KeyRound color={colors.textMuted} size={20} />}
-              name="email"
-              placeholder={t('auth.emailPlaceholder')}
-              type="email"
-            />
-            <ControlledInput
-              autoCapitalize="none"
-              control={control}
-              label={t('auth.resetToken')}
-              leftIcon={<KeyRound color={colors.textMuted} size={20} />}
-              name="token"
-              placeholder={t('auth.tokenPlaceholder')}
-              type="text"
-            />
-            <ControlledInput
-              control={control}
-              label={t('common.newPassword')}
-              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-              name="password"
-              type="password"
-            />
-            <ControlledInput
-              control={control}
-              label={t('auth.confirmNewPassword')}
-              leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
-              name="password_confirmation"
-              type="password"
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.86}
-              accessibilityRole="button"
-              accessibilityState={{
-                busy: resetPasswordMutation.isPending,
-                disabled: resetPasswordMutation.isPending,
-              }}
-              disabled={resetPasswordMutation.isPending}
-              onPress={() => void handleSubmit(onSubmit)()}
-              style={[
-                styles.submitButton,
-                resetPasswordMutation.isPending ? styles.submitButtonDisabled : null,
-              ]}
-            >
-              <Text style={styles.submitButtonText}>
-                {resetPasswordMutation.isPending
-                  ? t('auth.resettingPassword')
-                  : t('auth.resetPassword')}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={styles.appName}>{t('appName')}</Text>
+            <Text style={styles.title}>{t('auth.resetPassword')}</Text>
+            <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+
+        <View style={styles.formCard}>
+          {requestError ? <ErrorState message={requestError} /> : null}
+
+          <ControlledInput
+            autoCapitalize="none"
+            control={control}
+            label={t('common.email')}
+            leftIcon={<KeyRound color={colors.textMuted} size={20} />}
+            name="email"
+            placeholder={t('auth.emailPlaceholder')}
+            type="email"
+          />
+          <ControlledInput
+            autoCapitalize="none"
+            control={control}
+            label={t('auth.resetToken')}
+            leftIcon={<KeyRound color={colors.textMuted} size={20} />}
+            name="token"
+            placeholder={t('auth.tokenPlaceholder')}
+            type="text"
+          />
+          <ControlledInput
+            control={control}
+            label={t('common.newPassword')}
+            leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+            name="password"
+            type="password"
+          />
+          <ControlledInput
+            control={control}
+            label={t('auth.confirmNewPassword')}
+            leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
+            name="password_confirmation"
+            type="password"
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.86}
+            accessibilityRole="button"
+            accessibilityState={{
+              busy: resetPasswordMutation.isPending,
+              disabled: resetPasswordMutation.isPending,
+            }}
+            disabled={resetPasswordMutation.isPending}
+            onPress={() => void handleSubmit(onSubmit)()}
+            style={[
+              styles.submitButton,
+              resetPasswordMutation.isPending ? styles.submitButtonDisabled : null,
+            ]}
+          >
+            <Text style={styles.submitButtonText}>
+              {resetPasswordMutation.isPending
+                ? t('auth.resettingPassword')
+                : t('auth.resetPassword')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAwareFormScrollView>
     </SafeAreaView>
   );
 }
@@ -193,9 +179,6 @@ const styles = StyleSheet.create({
   headerText: {
     alignItems: 'center',
     gap: spacing.xs,
-  },
-  keyboard: {
-    flex: 1,
   },
   logo: {
     height: 72,

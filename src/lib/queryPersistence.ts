@@ -6,6 +6,11 @@ import { getStoredUser } from '@/lib/secureStorage';
 const PUBLIC_STORAGE_KEY = 'balagh.queryCache.public.v1';
 const PRIVATE_STORAGE_PREFIX = 'balagh.queryCache.user.v1';
 
+export async function clearPersistedPrivateQueries(userId: string | number | undefined) {
+  if (userId == null) return;
+  await AsyncStorage.removeItem(`${PRIVATE_STORAGE_PREFIX}.${userId}`).catch(() => undefined);
+}
+
 function isLookupQuery(queryKey: QueryKey) {
   return (
     queryKey[0] === 'lookups' && (queryKey[1] === 'departments' || queryKey[1] === 'categories')

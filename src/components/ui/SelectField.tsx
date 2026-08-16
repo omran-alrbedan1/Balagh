@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
@@ -97,7 +98,11 @@ export function SelectField({
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Modal animationType="slide" transparent visible={open} onRequestClose={close}>
-        <View style={[styles.backdrop, { paddingBottom: bottomInset }]}>
+        <KeyboardAvoidingView
+          automaticOffset
+          behavior="padding"
+          style={[styles.backdrop, { paddingBottom: bottomInset }]}
+        >
           <View style={[styles.sheet, { paddingBottom: spacing.lg + bottomInset }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>{label}</Text>
@@ -129,6 +134,7 @@ export function SelectField({
               contentContainerStyle={styles.optionsContent}
               data={filteredOptions}
               keyExtractor={(item) => item.id}
+              keyboardDismissMode="on-drag"
               keyboardShouldPersistTaps="handled"
               ListEmptyComponent={<Text style={styles.emptyText}>{t('select.empty')}</Text>}
               renderItem={({ item }) => (
@@ -155,7 +161,7 @@ export function SelectField({
               )}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -246,6 +252,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     minHeight: 44,
+    textAlign: 'auto',
+    writingDirection: 'auto',
   },
   selectedContent: {
     alignItems: 'center',

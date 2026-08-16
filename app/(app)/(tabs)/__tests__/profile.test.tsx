@@ -7,6 +7,10 @@ import { useUnreadCount } from '@/features/notifications/hooks/useUnreadCount';
 import ProfileScreen from '../profile';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '1.0.0' }, nativeAppVersion: '1.0.0' },
+}));
 jest.mock('expo-notifications', () => ({ setBadgeCountAsync: jest.fn() }));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 jest.mock('@/lib/i18n', () => ({ __esModule: true, default: { language: 'en' } }));
@@ -33,9 +37,18 @@ jest.mock('@/components/ui/Card', () => ({
 }));
 jest.mock('@/components/ui/Button', () => ({ Button: () => null }));
 jest.mock('@/features/auth/store/authStore', () => ({
-  useAuthStore: (selector: (state: { user: { name: string; role: string } }) => unknown) =>
+  useAuthStore: (
+    selector: (state: {
+      user: { email: string; name: string; phone: string; role: string };
+    }) => unknown,
+  ) =>
     selector({
-      user: { name: 'Amina', role: 'citizen' },
+      user: {
+        email: 'amina@example.test',
+        name: 'Amina',
+        phone: '+963900000000',
+        role: 'citizen',
+      },
     }),
 }));
 jest.mock('@/features/auth/hooks/useLogout', () => ({
@@ -75,4 +88,17 @@ it('hides the profile notification badge when there are no unread notifications'
 
   const view = render(<ProfileScreen />);
   expect(view.queryByText('3')).toBeNull();
+});
+
+it('displays account identity from the authenticated user cache and the Expo app version', () => {
+  (useUnreadCount as jest.MockedFunction<typeof useUnreadCount>).mockReturnValue({
+    data: { data: { count: 0 } },
+  } as ReturnType<typeof useUnreadCount>);
+
+  const view = render(<ProfileScreen />);
+
+  expect(view.getByText('Amina')).toBeTruthy();
+  expect(view.getByText('amina@example.test')).toBeTruthy();
+  expect(view.getByText('+963900000000')).toBeTruthy();
+  expect(view.getByText('1.0.0')).toBeTruthy();
 });
