@@ -18,10 +18,13 @@ jest.mock('lucide-react-native', () => ({
   Bell: () => null,
   ChevronRight: () => null,
   Globe2: () => null,
+  IdCard: () => null,
+  KeyRound: () => null,
   LogOut: () => null,
   Mail: () => null,
   Phone: () => null,
   ShieldCheck: () => null,
+  Pencil: () => null,
 }));
 jest.mock('@/components/layout/Screen', () => ({
   Screen: ({ children }: any) => {
@@ -39,13 +42,14 @@ jest.mock('@/components/ui/Button', () => ({ Button: () => null }));
 jest.mock('@/features/auth/store/authStore', () => ({
   useAuthStore: (
     selector: (state: {
-      user: { email: string; name: string; phone: string; role: string };
+      user: { email: string; name: string; national_id: string; phone: string; role: string };
     }) => unknown,
   ) =>
     selector({
       user: {
         email: 'amina@example.test',
         name: 'Amina',
+        national_id: 'N-12345',
         phone: '+963900000000',
         role: 'citizen',
       },
@@ -81,6 +85,19 @@ it('keeps the Notifications row navigable and displays the shared unread badge',
   expect(view.getByText('3')).toBeTruthy();
 });
 
+it('opens Edit Profile and Change Password from Profile', () => {
+  (useUnreadCount as jest.MockedFunction<typeof useUnreadCount>).mockReturnValue({
+    data: { data: { count: 0 } },
+  } as ReturnType<typeof useUnreadCount>);
+  const view = render(<ProfileScreen />);
+
+  fireEvent.press(view.getByText('profile.editProfile'));
+  fireEvent.press(view.getByText('auth.changePassword'));
+
+  expect(router.push).toHaveBeenCalledWith('/(app)/(tabs)/edit-profile');
+  expect(router.push).toHaveBeenCalledWith('/(app)/change-password');
+});
+
 it('hides the profile notification badge when there are no unread notifications', () => {
   (useUnreadCount as jest.MockedFunction<typeof useUnreadCount>).mockReturnValue({
     data: { data: { count: 0 } },
@@ -98,7 +115,8 @@ it('displays account identity from the authenticated user cache and the Expo app
   const view = render(<ProfileScreen />);
 
   expect(view.getByText('Amina')).toBeTruthy();
-  expect(view.getByText('amina@example.test')).toBeTruthy();
-  expect(view.getByText('+963900000000')).toBeTruthy();
+  expect(view.getAllByText('amina@example.test')).not.toHaveLength(0);
+  expect(view.getAllByText('+963900000000')).not.toHaveLength(0);
+  expect(view.getByText('N-12345')).toBeTruthy();
   expect(view.getByText('1.0.0')).toBeTruthy();
 });

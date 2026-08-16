@@ -5,7 +5,10 @@ import { PropsWithChildren } from 'react';
 
 import { logout, logoutAll } from '@/api/endpoints/auth.api';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { cleanupDeviceTokenForUser } from '@/features/notifications/utils/deviceTokenLifecycle';
+import {
+  cleanupDeviceTokenForUser,
+  clearLocalPushRegistration,
+} from '@/features/notifications/utils/deviceTokenLifecycle';
 import { clearPersistedPrivateQueries } from '@/lib/queryPersistence';
 
 import { useLogout } from '../useLogout';
@@ -15,12 +18,16 @@ jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
 jest.mock('@/api/endpoints/auth.api', () => ({ logout: jest.fn(), logoutAll: jest.fn() }));
 jest.mock('@/features/notifications/utils/deviceTokenLifecycle', () => ({
   cleanupDeviceTokenForUser: jest.fn(),
+  clearLocalPushRegistration: jest.fn(),
 }));
 jest.mock('@/lib/queryPersistence', () => ({ clearPersistedPrivateQueries: jest.fn() }));
 
 const logoutRequest = logout as jest.MockedFunction<typeof logout>;
 const logoutAllRequest = logoutAll as jest.MockedFunction<typeof logoutAll>;
 const cleanup = cleanupDeviceTokenForUser as jest.MockedFunction<typeof cleanupDeviceTokenForUser>;
+const clearLocalRegistration = clearLocalPushRegistration as jest.MockedFunction<
+  typeof clearLocalPushRegistration
+>;
 const clearPersisted = clearPersistedPrivateQueries as jest.MockedFunction<
   typeof clearPersistedPrivateQueries
 >;
@@ -47,6 +54,7 @@ function wrapper({ children }: PropsWithChildren) {
 beforeEach(() => {
   jest.clearAllMocks();
   cleanup.mockResolvedValue();
+  clearLocalRegistration.mockResolvedValue();
   clearPersisted.mockResolvedValue();
   useAuthStore.setState({
     clear: clearSession,
@@ -81,6 +89,8 @@ it('does not pretend logout-all succeeded when its server request fails', async 
   await waitFor(() => expect(result.current.isError).toBe(true));
 
   expect(clearPersisted).not.toHaveBeenCalled();
+  expect(cleanup).not.toHaveBeenCalled();
+  expect(clearLocalRegistration).not.toHaveBeenCalled();
   expect(clearSession).not.toHaveBeenCalled();
   expect(replace).not.toHaveBeenCalled();
 });
@@ -95,6 +105,8 @@ it('clears protected state and persistent user cache after logout-all succeeds',
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
   expect(clearPersisted).toHaveBeenCalledWith('citizen-1');
+  expect(cleanup).not.toHaveBeenCalled();
+  expect(clearLocalRegistration).toHaveBeenCalledTimes(1);
   expect(clearSession).toHaveBeenCalledTimes(1);
   expect(replace).toHaveBeenCalledWith('/(auth)/login');
 });

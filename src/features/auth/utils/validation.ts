@@ -45,16 +45,17 @@ export function getOtpSchema() {
 export function getChangePasswordSchema() {
   return z
     .object({
-      current_password: z
-        .string()
-        .min(1, { message: i18next.t('errors.requiredField') })
-        .min(8, { message: i18next.t('errors.passwordTooShort') }),
+      current_password: z.string().min(1, { message: i18next.t('errors.requiredField') }),
       password: z.string().min(8, { message: i18next.t('errors.passwordTooShort') }),
       password_confirmation: z.string().min(8, { message: i18next.t('errors.passwordTooShort') }),
     })
     .refine((data) => data.password === data.password_confirmation, {
       message: i18next.t('errors.passwordMismatch'),
       path: ['password_confirmation'],
+    })
+    .refine((data) => data.current_password !== data.password, {
+      message: i18next.t('errors.passwordMustDiffer'),
+      path: ['password'],
     });
 }
 

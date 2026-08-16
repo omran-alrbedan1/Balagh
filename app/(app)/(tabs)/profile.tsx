@@ -1,6 +1,17 @@
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { Globe2, LogOut, Mail, Phone, ShieldCheck, Bell, ChevronRight } from 'lucide-react-native';
+import {
+  Globe2,
+  LogOut,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Bell,
+  ChevronRight,
+  IdCard,
+  KeyRound,
+  Pencil,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { APP_VERSION } from '@/constants/appInfo';
@@ -28,9 +39,19 @@ export default function ProfileScreen() {
 
   const menuItems = [
     {
+      icon: Pencil,
+      label: t('profile.editProfile'),
+      onPress: () => router.push('/(app)/(tabs)/edit-profile'),
+    },
+    {
       icon: Bell,
       label: t('profile.notifications'),
       onPress: () => router.push('/(app)/(tabs)/notifications'),
+    },
+    {
+      icon: KeyRound,
+      label: t('auth.changePassword'),
+      onPress: () => router.push('/(app)/change-password'),
     },
   ];
 
@@ -70,6 +91,27 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      <Card style={{ marginBottom: 16 }}>
+        <Text className="text-base-900 dark:text-white text-base font-bold mb-3">
+          {t('profile.accountDetails')}
+        </Text>
+        <View className="gap-3">
+          <AccountDetail
+            icon={Mail}
+            label={t('common.email')}
+            value={user?.email ?? t('profile.noEmail')}
+          />
+          <AccountDetail
+            icon={Phone}
+            label={t('common.phone')}
+            value={user?.phone ?? t('profile.noPhone')}
+          />
+          {user?.national_id ? (
+            <AccountDetail icon={IdCard} label={t('common.nationalId')} value={user.national_id} />
+          ) : null}
+        </View>
+      </Card>
+
       {/* Menu Items */}
       <Card style={{ marginBottom: 16 }}>
         {menuItems.map((item, index) => {
@@ -89,7 +131,7 @@ export default function ProfileScreen() {
               <Text className="flex-1 text-base-900 dark:text-white text-base font-medium ml-3">
                 {item.label}
               </Text>
-              {index === 0 && unreadBadge ? (
+              {item.label === t('profile.notifications') && unreadBadge ? (
                 <View className="min-w-6 items-center justify-center rounded-full bg-danger-600 px-1.5 py-0.5">
                   <Text className="text-xs font-black text-white">{unreadBadge}</Text>
                 </View>
@@ -150,5 +192,27 @@ export default function ProfileScreen() {
       </View>
       {logoutAll.error ? <ErrorState message={logoutAll.error.message} /> : null}
     </Screen>
+  );
+}
+
+function AccountDetail({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View accessibilityLabel={`${label}: ${value}`} className="flex-row items-center gap-3">
+      <View className="w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-900/30 items-center justify-center">
+        <Icon color="#082248" size={16} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-base-500 dark:text-base-400 text-xs font-semibold">{label}</Text>
+        <Text className="text-base-900 dark:text-white text-sm font-medium">{value}</Text>
+      </View>
+    </View>
   );
 }

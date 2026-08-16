@@ -12,10 +12,11 @@ interface AuthState {
   user: AuthUser | null;
   hydrate: () => Promise<void>;
   setSession: (token: string, user: AuthUser | { user: AuthUser }) => Promise<void>;
+  updateUser: (user: AuthUser | { user: AuthUser }) => Promise<void>;
   clear: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   isHydrated: false,
   token: null,
   user: null,
@@ -55,6 +56,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     const normalizedUser = extractAuthUser(user);
     await saveSession(token, normalizedUser);
     set({ token, user: normalizedUser });
+  },
+  updateUser: async (user) => {
+    const token = get().token;
+    if (!token) return;
+
+    const normalizedUser = extractAuthUser(user);
+    await saveSession(token, normalizedUser);
+    set({ user: normalizedUser });
   },
   clear: async () => {
     await clearSession();

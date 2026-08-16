@@ -9,16 +9,11 @@ export function getEditProfileSchema() {
       .min(1, { message: i18next.t('errors.requiredField') })
       .min(2, { message: i18next.t('errors.nameTooShort') })
       .max(120, { message: i18next.t('errors.nameTooLong') }),
-    email: z
-      .string()
-      .min(1, { message: i18next.t('errors.emailRequired') })
-      .email({ message: i18next.t('errors.invalidEmail') }),
     phone: z
       .string()
       .min(1, { message: i18next.t('errors.requiredField') })
       .min(8, { message: i18next.t('errors.phoneTooShort') })
       .max(20, { message: i18next.t('errors.phoneTooLong') }),
-    national_id: z.string().optional(),
   });
 }
 

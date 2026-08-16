@@ -1,5 +1,5 @@
 import { ApiError } from '@/api/client';
-import { me } from '@/api/endpoints/auth.api';
+import { extractAuthUser, me } from '@/api/endpoints/auth.api';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { fetchConnectivityStatus } from '@/hooks/useNetworkStatus';
 import { clearSession, getStoredUser, getToken, saveSession } from '@/lib/secureStorage';
@@ -25,6 +25,7 @@ jest.mock('@/lib/secureStorage', () => ({
 }));
 
 const mockedMe = me as jest.MockedFunction<typeof me>;
+const mockedExtractAuthUser = extractAuthUser as jest.MockedFunction<typeof extractAuthUser>;
 const mockedConnectivity = fetchConnectivityStatus as jest.MockedFunction<
   typeof fetchConnectivityStatus
 >;
@@ -38,6 +39,7 @@ beforeEach(() => {
   useAuthStore.setState({ isHydrated: false, token: null, user: null });
   mockedGetToken.mockResolvedValue('stored-token');
   mockedGetStoredUser.mockResolvedValue(cachedUser);
+  mockedExtractAuthUser.mockImplementation((user) => ('user' in user ? user.user : user));
 });
 
 it('opens the cached authenticated session without calling /me when offline', async () => {
@@ -85,4 +87,14 @@ it('hydrates to a signed-out state when there is no stored token', async () => {
   expect(mockedMe).not.toHaveBeenCalled();
   expect(saveSession).not.toHaveBeenCalled();
   expect(useAuthStore.getState().token).toBeNull();
+});
+
+it('updates the persisted authenticated user after a successful profile response', async () => {
+  const updatedUser = { id: 'user-1', name: 'Updated Citizen', phone: '+963900000001' };
+  useAuthStore.setState({ token: 'stored-token', user: cachedUser });
+
+  await useAuthStore.getState().updateUser(updatedUser);
+
+  expect(saveSession).toHaveBeenCalledWith('stored-token', updatedUser);
+  expect(useAuthStore.getState().user).toEqual(updatedUser);
 });

@@ -1,4 +1,5 @@
 export const queryKeys = {
+  authMe: ['auth', 'me'] as const,
   homeDashboard: ['home', 'dashboard'] as const,
   notifications: ['notifications', 'list'] as const,
   notificationsRoot: ['notifications'] as const,

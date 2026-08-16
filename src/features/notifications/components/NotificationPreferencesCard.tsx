@@ -79,6 +79,7 @@ export function NotificationPreferencesCard() {
       <Text style={styles.title}>{t('notificationPreferences.title')}</Text>
       <Text style={styles.description}>{t('notificationPreferences.description')}</Text>
       <Text style={styles.capabilityNote}>{t('notificationPreferences.channelAvailability')}</Text>
+      <Text style={styles.capabilityNote}>{t('notificationPreferences.emailAvailability')}</Text>
       <Text style={styles.capabilityNote}>{t('notificationPreferences.inAppAlwaysOn')}</Text>
 
       {preferenceKeys.map((key) => (

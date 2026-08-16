@@ -53,6 +53,11 @@ export interface ChangePasswordPayload {
   password_confirmation: string;
 }
 
+export interface UpdateProfilePayload {
+  name: string;
+  phone: string;
+}
+
 export interface ForgotPasswordPayload {
   email: string;
 }

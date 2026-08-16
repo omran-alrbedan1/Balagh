@@ -12,6 +12,7 @@ import {
   RegisterPayload,
   ResetPasswordPayload,
   ResendOtpPayload,
+  UpdateProfilePayload,
   VerifyOtpPayload,
 } from '@/api/types/auth.types';
 
@@ -41,6 +42,18 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
 
 export async function me() {
   const response = await apiClient.get<ApiEnvelope<AuthUserResponse>>('/auth/me');
+
+  return {
+    ...response.data,
+    data: extractAuthUser(response.data.data),
+  };
+}
+
+export async function updateProfile(payload: UpdateProfilePayload) {
+  const response = await apiClient.patch<ApiEnvelope<AuthUserResponse>>('/auth/profile', {
+    name: payload.name.trim(),
+    phone: payload.phone.trim(),
+  });
 
   return {
     ...response.data,

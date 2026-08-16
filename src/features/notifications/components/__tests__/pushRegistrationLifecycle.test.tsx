@@ -95,6 +95,17 @@ it('registers an authenticated user and persists the exact backend record ID', a
   );
 });
 
+it('registers again after logout-all has cleared local push-registration bookkeeping', async () => {
+  getStored.mockResolvedValue(null);
+
+  await registerCurrentDevice('8');
+
+  expect(register).toHaveBeenCalledTimes(1);
+  expect(saveStored).toHaveBeenCalledWith(
+    expect.objectContaining({ userId: '8', deviceTokenId: 31 }),
+  );
+});
+
 it('does not POST repeatedly when registration metadata is unchanged', async () => {
   getStored.mockResolvedValue({
     appVersion: '1.0.0',

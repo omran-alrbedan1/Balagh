@@ -22,7 +22,7 @@ import { spacing } from '@/theme/spacing';
 export function ChangePasswordScreen() {
   const { t } = useTranslation();
   const changePasswordSchema = useMemo(() => getChangePasswordSchema(), []);
-  const { control, handleSubmit, setError } = useForm<ChangePasswordFormValues>({
+  const { control, handleSubmit, reset, setError } = useForm<ChangePasswordFormValues>({
     defaultValues: {
       current_password: '',
       password: '',
@@ -39,6 +39,7 @@ export function ChangePasswordScreen() {
   const onSubmit = (values: ChangePasswordFormValues) => {
     changePasswordMutation.mutate(values, {
       onSuccess: () => {
+        reset();
         router.back();
       },
       onError: (error: unknown) => {
@@ -60,7 +61,12 @@ export function ChangePasswordScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft color={colors.text} size={24} />
         </Pressable>
 
@@ -83,6 +89,7 @@ export function ChangePasswordScreen() {
           {requestError ? <ErrorState message={requestError} /> : null}
 
           <ControlledInput
+            accessibilityLabel={t('auth.currentPassword')}
             control={control}
             label={t('auth.currentPassword')}
             leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
@@ -90,6 +97,8 @@ export function ChangePasswordScreen() {
             type="password"
           />
           <ControlledInput
+            accessibilityLabel={t('common.newPassword')}
+            helperText={t('auth.passwordMinimum')}
             control={control}
             label={t('common.newPassword')}
             leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}
@@ -97,6 +106,7 @@ export function ChangePasswordScreen() {
             type="password"
           />
           <ControlledInput
+            accessibilityLabel={t('auth.confirmNewPassword')}
             control={control}
             label={t('auth.confirmNewPassword')}
             leftIcon={<LockKeyhole color={colors.textMuted} size={20} />}

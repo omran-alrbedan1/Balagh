@@ -11,7 +11,11 @@ export async function cleanupDeviceTokenForUser(userId: string | number | undefi
   } catch (error) {
     if (__DEV__) console.warn('Unable to deactivate this device token during logout.', error);
   } finally {
-    await clearPushRegistration();
-    await setApplicationBadge(0);
+    await clearLocalPushRegistration();
   }
+}
+
+export async function clearLocalPushRegistration() {
+  await clearPushRegistration();
+  await setApplicationBadge(0);
 }

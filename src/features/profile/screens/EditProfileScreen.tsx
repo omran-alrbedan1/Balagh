@@ -7,10 +7,15 @@ import { useTranslation } from 'react-i18next';
 import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ApiError } from '@/api/client';
 import { ControlledInput } from '@/components/ui/ControlledInput';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Input } from '@/components/ui/Input';
 import { KeyboardAwareFormScrollView } from '@/components/layout/KeyboardAwareFormScrollView';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile';
 import { getEditProfileSchema, EditProfileFormValues } from '@/features/profile/utils/validation';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -18,19 +23,32 @@ export function EditProfileScreen() {
   const { t } = useTranslation();
   const editProfileSchema = useMemo(() => getEditProfileSchema(), []);
   const user = useAuthStore((state) => state.user);
-  const { control, handleSubmit } = useForm<EditProfileFormValues>({
+  const { control, handleSubmit, setError } = useForm<EditProfileFormValues>({
     defaultValues: {
       name: user?.name ?? '',
-      email: user?.email ?? '',
       phone: user?.phone ?? '',
-      national_id: user?.national_id ?? '',
     },
     resolver: zodResolver(editProfileSchema),
   });
+  const updateProfileMutation = useUpdateProfile();
+  const { isOffline } = useNetworkStatus();
+  const requestError =
+    updateProfileMutation.error instanceof ApiError
+      ? updateProfileMutation.error.message
+      : updateProfileMutation.error?.message;
 
   const onSubmit = (values: EditProfileFormValues) => {
-    void values;
-    router.back();
+    updateProfileMutation.mutate(values, {
+      onSuccess: () => router.back(),
+      onError: (error: unknown) => {
+        if (error instanceof ApiError && error.fieldErrors) {
+          (['name', 'phone'] as const).forEach((field) => {
+            const message = error.fieldErrors?.[field]?.[0];
+            if (message) setError(field, { message });
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -40,7 +58,12 @@ export function EditProfileScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          accessibilityLabel={t('common.back')}
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft color={colors.text} size={24} />
         </Pressable>
 
@@ -61,43 +84,61 @@ export function EditProfileScreen() {
         </View>
 
         <View style={styles.formCard}>
+          {isOffline ? <ErrorState message={t('profile.offlineSave')} /> : null}
+          {requestError ? <ErrorState message={requestError} /> : null}
           <ControlledInput
+            accessibilityLabel={t('common.fullName')}
             control={control}
             label={t('common.fullName')}
             leftIcon={<UserRound color={colors.textMuted} size={20} />}
             name="name"
             type="text"
           />
-          <ControlledInput
+          <Input
             autoCapitalize="none"
-            control={control}
+            accessibilityLabel={t('profile.emailReadOnly')}
+            disabled
+            helperText={t('profile.emailReadOnlyHint')}
             label={t('common.email')}
             leftIcon={<Mail color={colors.textMuted} size={20} />}
-            name="email"
             type="email"
+            value={user?.email ?? ''}
           />
           <ControlledInput
+            accessibilityLabel={t('common.phone')}
             control={control}
             label={t('common.phone')}
             leftIcon={<Phone color={colors.textMuted} size={20} />}
             name="phone"
             type="phone"
           />
-          <ControlledInput
-            control={control}
+          <Input
+            accessibilityLabel={t('profile.nationalIdReadOnly')}
+            disabled
+            helperText={t('profile.nationalIdReadOnlyHint')}
             label={t('common.nationalId')}
             leftIcon={<IdCard color={colors.textMuted} size={20} />}
-            name="national_id"
             type="text"
+            value={user?.national_id ?? ''}
           />
 
           <TouchableOpacity
             activeOpacity={0.86}
             accessibilityRole="button"
+            accessibilityState={{
+              busy: updateProfileMutation.isPending,
+              disabled: updateProfileMutation.isPending || isOffline,
+            }}
+            disabled={updateProfileMutation.isPending || isOffline}
             onPress={() => void handleSubmit(onSubmit)()}
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              updateProfileMutation.isPending || isOffline ? styles.submitButtonDisabled : null,
+            ]}
           >
-            <Text style={styles.submitButtonText}>{t('common.save')}</Text>
+            <Text style={styles.submitButtonText}>
+              {updateProfileMutation.isPending ? t('profile.saving') : t('common.save')}
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAwareFormScrollView>
@@ -176,6 +217,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 14,
     width: '100%',
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
   submitButtonText: {
     color: '#FFFFFF',

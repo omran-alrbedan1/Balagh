@@ -63,6 +63,7 @@ beforeEach(() => {
 it('loads and displays backend notification preferences', () => {
   const view = render(<NotificationPreferencesCard />);
   expect(view.getByText('notificationPreferences.title')).toBeTruthy();
+  expect(view.getByText('notificationPreferences.emailAvailability')).toBeTruthy();
   expect(view.getByLabelText('notificationPreferences.fields.push_enabled')).toBeTruthy();
 });
 
