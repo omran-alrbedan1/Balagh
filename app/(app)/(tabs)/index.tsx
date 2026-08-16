@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, Clock3, FilePlus2, Inbox, ShieldCheck } from 'lucide-react-native';
+import { Bell, Clock3, FilePlus2, Inbox, ShieldCheck, UserRound } from 'lucide-react-native';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -45,6 +45,16 @@ export default function HomeScreen() {
             <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
           </View>
         )}
+      </Pressable>
+
+      <Pressable
+        accessibilityLabel={t('profile.title')}
+        accessibilityRole="button"
+        onPress={() => router.push('/(app)/(tabs)/profile')}
+        style={({ pressed }) => [styles.profileEntry, pressed && styles.pressed]}
+      >
+        <UserRound color={colors.primary} size={22} />
+        <Text style={styles.notificationEntryText}>{t('profile.title')}</Text>
       </Pressable>
 
       <View style={styles.hero}>
@@ -118,6 +128,17 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
   notificationEntry: {
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
+  },
+  profileEntry: {
     alignItems: 'center',
     backgroundColor: colors.card,
     borderColor: colors.border,

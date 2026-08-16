@@ -1,5 +1,11 @@
 {
   "appName": "بلاغ",
+  "navigation": {
+    "home": "الرئيسية",
+    "complaints": "البلاغات",
+    "newComplaint": "بلاغ جديد",
+    "notifications": "الإشعارات"
+  },
   "common": {
     "address": "العنوان",
     "all": "الكل",
@@ -105,6 +111,10 @@
     "editProfile": "تعديل الملف الشخصي",
     "editProfileSubtitle": "تحديث معلوماتك الشخصية",
     "language": "اللغة",
+    "notifications": "الإشعارات",
+    "personalInfo": "المعلومات الشخصية",
+    "settings": "الإعدادات",
+    "helpSupport": "المساعدة والدعم",
     "logout": "تسجيل الخروج",
     "logoutAll": "تسجيل الخروج من جميع الأجهزة",
     "noEmail": "لم تتم إضافة بريد إلكتروني",
@@ -142,6 +152,9 @@
     "location": "الموقع",
     "locationCaptured": "تم التقاط الموقع",
     "locationHelper": "أو أدخل العنوان يدوياً:",
+    "chooseOnMap": "اختر من الخريطة",
+    "mapHint": "اضغط على الخريطة لوضع علامة، ثم أكد الموقع.",
+    "confirmMapLocation": "استخدم الموقع المحدد على الخريطة",
     "locationStepSubtitle": "يساعد الموقع على توجيه البلاغ للفريق المناسب، ولا يمنع الإرسال.",
     "locationStepTitle": "أين تحدث المشكلة؟",
     "newSubtitle": "أرسل المشكلة بخطوات بسيطة.",

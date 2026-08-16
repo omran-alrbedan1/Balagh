@@ -1,4 +1,4 @@
-import { ConfigContext, ExpoConfig } from 'expo/config';
+import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     orientation: 'portrait',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic',
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
@@ -42,7 +42,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       'expo-router',
       'expo-dev-client',
       'expo-secure-store',
-      '@sentry/react-native',
       [
         'expo-splash-screen',
         {
@@ -59,6 +58,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           defaultChannel: 'default',
         },
       ],
+      ...(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
+        ? [
+            [
+              'react-native-maps',
+              { androidGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY },
+            ],
+          ]
+        : []),
       [
         'expo-build-properties',
         {

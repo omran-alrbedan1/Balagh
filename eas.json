@@ -16,13 +16,18 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://governmentcomplaints.onrender.com/api/v1",
         "EXPO_PUBLIC_PUSH_NOTIFICATIONS_ENABLED": "true"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "env": {
+        "NODE_ENV": "production",
         "EXPO_PUBLIC_API_BASE_URL": "https://governmentcomplaints.onrender.com/api/v1",
         "EXPO_PUBLIC_PUSH_NOTIFICATIONS_ENABLED": "true"
       }
@@ -32,7 +37,8 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "channel": "production-apk"
     }
   },
   "submit": {

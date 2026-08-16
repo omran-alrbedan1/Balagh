@@ -36,6 +36,7 @@
     "react-hook-form": "^7.82.0",
     "react-i18next": "^17.0.11",
     "react-native": "0.86.2",
+    "react-native-maps": "1.27.2",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
@@ -63,7 +64,6 @@
     "jest-expo": "~57.0.4",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
-    "react-server-dom-webpack": "^19.2.4",
     "typescript": "~6.0.3"
   },
   "scripts": {

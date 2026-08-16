@@ -26,12 +26,12 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function ResetPasswordScreen() {
-  const { i18n, t } = useTranslation();
+  const { t } = useTranslation();
   const { email, token } = useLocalSearchParams<{
     email: string;
     token: string;
   }>();
-  const resetPasswordSchema = useMemo(() => getResetPasswordSchema(), [i18n.language]);
+  const resetPasswordSchema = useMemo(() => getResetPasswordSchema(), []);
   const { control, handleSubmit, setError } = useForm<ResetPasswordFormValues>({
     defaultValues: {
       email: email || '',

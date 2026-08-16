@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.balagh.app",
@@ -25,22 +25,30 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.balagh.app",
       "googleServicesFile": "./google-services.json",
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "POST_NOTIFICATIONS"]
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "6e968168-ff98-44fd-8967-b9ace11a3045"
+        "projectId": "d5990526-4292-47ee-88b0-a2f4ac3194cb"
       }
     },
-    "owner": "omran_alrbedan",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/6e968168-ff98-44fd-8967-b9ace11a3045"
-    }
+      "url": "https://u.expo.dev/d5990526-4292-47ee-88b0-a2f4ac3194cb"
+    },
+    "owner": "akthamnaeem"
   }
 }

@@ -26,8 +26,8 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function RegisterScreen() {
-  const { i18n, t } = useTranslation();
-  const registerSchema = useMemo(() => getRegisterSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const registerSchema = useMemo(() => getRegisterSchema(), []);
   const { control, handleSubmit, setError } = useForm<RegisterFormValues>({
     defaultValues: {
       email: '',

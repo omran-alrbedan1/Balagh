@@ -26,8 +26,8 @@ import { getLoginSchema, LoginFormValues } from '@/features/auth/utils/validatio
 import { colors } from '@/theme/colors';
 
 export function LoginScreen() {
-  const { i18n, t } = useTranslation();
-  const loginSchema = useMemo(() => getLoginSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const loginSchema = useMemo(() => getLoginSchema(), []);
   const [flowError, setFlowError] = useState<string | null>(null);
   const setSession = useAuthStore((state) => state.setSession);
   const { control, handleSubmit } = useForm<LoginFormValues>({

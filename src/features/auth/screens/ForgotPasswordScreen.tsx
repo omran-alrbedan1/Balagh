@@ -29,8 +29,8 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function ForgotPasswordScreen() {
-  const { i18n, t } = useTranslation();
-  const forgotPasswordSchema = useMemo(() => getForgotPasswordSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const forgotPasswordSchema = useMemo(() => getForgotPasswordSchema(), []);
   const { control, handleSubmit, setError } = useForm<ForgotPasswordFormValues>({
     defaultValues: {
       email: '',

@@ -1,17 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import {
-  Globe2,
-  LogOut,
-  Mail,
-  Phone,
-  ShieldCheck,
-  User,
-  Settings,
-  Bell,
-  HelpCircle,
-  ChevronRight,
-} from 'lucide-react-native';
+import { Globe2, LogOut, Mail, Phone, ShieldCheck, Bell, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { APP_VERSION } from '@/constants/appInfo';
@@ -34,17 +23,10 @@ export default function ProfileScreen() {
 
   const menuItems = [
     {
-      icon: User,
-      label: t('profile.personalInfo'),
-      onPress: () => router.push('/(app)/(tabs)/edit-profile'),
-    },
-    {
       icon: Bell,
       label: t('profile.notifications'),
       onPress: () => router.push('/(app)/(tabs)/notifications'),
     },
-    { icon: Settings, label: t('profile.settings') },
-    { icon: HelpCircle, label: t('profile.helpSupport') },
   ];
 
   return (
@@ -90,8 +72,7 @@ export default function ProfileScreen() {
           return (
             <Pressable
               key={index}
-              accessibilityRole={item.onPress ? 'button' : undefined}
-              disabled={!item.onPress}
+              accessibilityRole="button"
               onPress={item.onPress}
               className={`flex-row items-center py-3.5 px-1 ${
                 index < menuItems.length - 1 ? 'border-b border-base-200 dark:border-base-700' : ''

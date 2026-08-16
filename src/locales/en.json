@@ -1,5 +1,11 @@
 {
   "appName": "Balagh",
+  "navigation": {
+    "home": "Home",
+    "complaints": "Complaints",
+    "newComplaint": "New complaint",
+    "notifications": "Notifications"
+  },
   "common": {
     "address": "Address",
     "all": "All",
@@ -105,6 +111,10 @@
     "editProfile": "Edit Profile",
     "editProfileSubtitle": "Update your personal information",
     "language": "Language",
+    "notifications": "Notifications",
+    "personalInfo": "Personal information",
+    "settings": "Settings",
+    "helpSupport": "Help and support",
     "logout": "Log out",
     "logoutAll": "Log out all devices",
     "noEmail": "No email added",
@@ -142,6 +152,9 @@
     "location": "Location",
     "locationCaptured": "Location captured",
     "locationHelper": "Or enter the address manually:",
+    "chooseOnMap": "Choose on map",
+    "mapHint": "Tap the map to place a marker, then confirm the location.",
+    "confirmMapLocation": "Use selected map location",
     "locationStepSubtitle": "Location helps route your complaint to the right team. It never blocks submission.",
     "locationStepTitle": "Where is this happening?",
     "newSubtitle": "Submit the issue in a few guided steps.",

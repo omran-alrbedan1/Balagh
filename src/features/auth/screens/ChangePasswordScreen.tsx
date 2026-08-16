@@ -29,8 +29,8 @@ import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function ChangePasswordScreen() {
-  const { i18n, t } = useTranslation();
-  const changePasswordSchema = useMemo(() => getChangePasswordSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const changePasswordSchema = useMemo(() => getChangePasswordSchema(), []);
   const { control, handleSubmit, setError } = useForm<ChangePasswordFormValues>({
     defaultValues: {
       current_password: '',

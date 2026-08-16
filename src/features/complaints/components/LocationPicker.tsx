@@ -3,6 +3,7 @@ import { MapPin } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import MapView, { Marker, Region } from 'react-native-maps';
 
 import { Input } from '@/components/ui/Input';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
@@ -16,6 +17,12 @@ export function LocationPicker() {
   const [address, setAddress] = useState(location?.address ?? '');
   const [loading, setLoading] = useState(false);
   const [manualMode, setManualMode] = useState(false);
+  const [mapVisible, setMapVisible] = useState(false);
+  const initialCoordinate =
+    location && location.lat !== 0 && location.lng !== 0
+      ? { latitude: location.lat, longitude: location.lng }
+      : { latitude: 33.5138, longitude: 36.2765 };
+  const [selectedCoordinate, setSelectedCoordinate] = useState(initialCoordinate);
 
   const handleUseCurrentLocation = async () => {
     setLoading(true);
@@ -43,9 +50,46 @@ export function LocationPicker() {
         address: resolvedAddress,
       });
       setAddress(resolvedAddress ?? '');
+    } catch {
+      setManualMode(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmMapLocation = async () => {
+    setLoading(true);
+    const fallbackAddress = `${selectedCoordinate.latitude.toFixed(5)}, ${selectedCoordinate.longitude.toFixed(5)}`;
+
+    try {
+      const [place] = await Location.reverseGeocodeAsync(selectedCoordinate);
+      const resolvedAddress = place
+        ? [place.street, place.city, place.region].filter(Boolean).join(', ')
+        : undefined;
+      setLocation({
+        lat: selectedCoordinate.latitude,
+        lng: selectedCoordinate.longitude,
+        address: resolvedAddress || fallbackAddress,
+      });
+      setAddress(resolvedAddress || fallbackAddress);
+    } catch {
+      setLocation({
+        lat: selectedCoordinate.latitude,
+        lng: selectedCoordinate.longitude,
+        address: fallbackAddress,
+      });
+      setAddress(fallbackAddress);
+    } finally {
+      setLoading(false);
+      setMapVisible(false);
+      setManualMode(false);
+    }
+  };
+
+  const region: Region = {
+    ...selectedCoordinate,
+    latitudeDelta: 0.04,
+    longitudeDelta: 0.04,
   };
 
   return (
@@ -64,6 +108,36 @@ export function LocationPicker() {
           </>
         )}
       </Pressable>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setMapVisible((visible) => !visible)}
+        style={styles.mapButton}
+      >
+        <MapPin color={colors.primary} size={18} />
+        <Text style={styles.mapButtonText}>{t('complaints.chooseOnMap')}</Text>
+      </Pressable>
+
+      {mapVisible ? (
+        <View style={styles.mapContainer}>
+          <Text style={styles.helper}>{t('complaints.mapHint')}</Text>
+          <MapView
+            initialRegion={region}
+            onPress={({ nativeEvent }) => setSelectedCoordinate(nativeEvent.coordinate)}
+            style={styles.map}
+          >
+            <Marker coordinate={selectedCoordinate} />
+          </MapView>
+          <Pressable
+            accessibilityRole="button"
+            disabled={loading}
+            onPress={() => void handleConfirmMapLocation()}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>{t('complaints.confirmMapLocation')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {location ? (
         <View style={styles.locationCard}>
@@ -123,6 +197,30 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: spacing.md,
+  },
+  map: {
+    borderRadius: 8,
+    height: 260,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  mapButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryLight,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'center',
+    minHeight: 54,
+  },
+  mapButtonText: {
+    color: colors.primary,
+    fontWeight: '800',
+  },
+  mapContainer: {
+    gap: spacing.sm,
   },
   locationMeta: {
     color: colors.textMuted,

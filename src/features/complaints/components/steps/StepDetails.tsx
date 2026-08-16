@@ -22,8 +22,8 @@ interface StepDetailsProps {
 }
 
 export function StepDetails({ onBack, onNext }: StepDetailsProps) {
-  const { i18n, t } = useTranslation();
-  const complaintDetailsSchema = useMemo(() => getComplaintDetailsSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const complaintDetailsSchema = useMemo(() => getComplaintDetailsSchema(), []);
   const title = useDraftComplaintStore((state) => state.title);
   const description = useDraftComplaintStore((state) => state.description);
   const setTitleDescription = useDraftComplaintStore((state) => state.setTitleDescription);

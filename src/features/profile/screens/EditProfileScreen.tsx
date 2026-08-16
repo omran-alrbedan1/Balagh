@@ -17,19 +17,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ApiError } from '@/api/client';
 import { ControlledInput } from '@/components/ui/ControlledInput';
-import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { getEditProfileSchema, EditProfileFormValues } from '@/features/profile/utils/validation';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
 export function EditProfileScreen() {
-  const { i18n, t } = useTranslation();
-  const editProfileSchema = useMemo(() => getEditProfileSchema(), [i18n.language]);
+  const { t } = useTranslation();
+  const editProfileSchema = useMemo(() => getEditProfileSchema(), []);
   const user = useAuthStore((state) => state.user);
-  const { control, handleSubmit, setError } = useForm<EditProfileFormValues>({
+  const { control, handleSubmit } = useForm<EditProfileFormValues>({
     defaultValues: {
       name: user?.name ?? '',
       email: user?.email ?? '',
@@ -40,8 +38,7 @@ export function EditProfileScreen() {
   });
 
   const onSubmit = (values: EditProfileFormValues) => {
-    // TODO: Implement update profile API call
-    console.log('Update profile:', values);
+    void values;
     router.back();
   };
 
