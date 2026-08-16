@@ -1,12 +1,14 @@
 {
   "appName": "Balagh",
   "navigation": {
+    "profile": "Profile",
     "home": "Home",
     "complaints": "Complaints",
     "newComplaint": "New complaint",
     "notifications": "Notifications"
   },
   "common": {
+    "retry": "Retry",
     "address": "Address",
     "all": "All",
     "appVersion": "App version",
@@ -94,6 +96,16 @@
     "updatesDescription": "Follow status changes, timelines, and resolution progress from your phone."
   },
   "home": {
+    "actionRequired": "Action required",
+    "activeComplaints": "Active complaints",
+    "additionalInformationRequired": "Additional information required",
+    "completedComplaints": "Completed complaints",
+    "dashboardUnavailable": "Unable to load dashboard",
+    "dashboardUnavailableMessage": "Check your connection and try again. Your last available dashboard data will appear when it is cached.",
+    "openActionRequired": "Open action required complaint {{title}}",
+    "openComplaintAction": "Open complaint",
+    "recentComplaints": "Recent complaints",
+    "waitingForResponse": "Waiting for your response",
     "citizen": "Citizen",
     "newComplaint": "File a New Complaint",
     "noComplaintsMessage": "Once you file a complaint, its latest updates will show up here.",
@@ -189,6 +201,8 @@
     "noAttachments": "No attachments were submitted with this complaint.",
     "notFoundMessage": "This complaint may have been removed or is unavailable to your account.",
     "notFoundTitle": "Complaint not found",
+    "invalidIdMessage": "Return to Complaints and open a valid complaint.",
+    "invalidIdTitle": "Invalid complaint link",
     "photoCaption": "{{count}}/{{max}} photos attached (optional but recommended)",
     "photos": "PHOTOS ({{count}})",
     "priorityPending": "Priority pending",

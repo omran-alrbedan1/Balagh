@@ -12,8 +12,15 @@ function isLookupQuery(queryKey: QueryKey) {
   );
 }
 
-function isComplaintQuery(queryKey: QueryKey) {
-  return queryKey[0] === 'complaints';
+function isComplaintQuery(queryKey: QueryKey, ownerUserId?: string) {
+  return queryKey[0] === 'complaints' && queryKey[1] === ownerUserId;
+}
+
+function isPrivateUserQuery(queryKey: QueryKey, ownerUserId: string) {
+  return (
+    isComplaintQuery(queryKey, ownerUserId) ||
+    (queryKey[0] === 'home' && queryKey[1] === 'dashboard')
+  );
 }
 
 async function readAndHydrate(queryClient: QueryClient, key: string) {
@@ -29,6 +36,11 @@ export async function hydratePersistedQueries(queryClient: QueryClient) {
     const user = await getStoredUser();
     if (user) {
       await readAndHydrate(queryClient, `${PRIVATE_STORAGE_PREFIX}.${user.id}`);
+      const ownerUserId = String(user.id);
+      queryClient.removeQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'complaints' && !isComplaintQuery(query.queryKey, ownerUserId),
+      });
     }
   } catch {
     // A corrupt cache is disposable; authentication and queued writes are stored separately.
@@ -58,7 +70,8 @@ export function startQueryPersistence(queryClient: QueryClient) {
 
           const privateState = dehydrate(queryClient, {
             shouldDehydrateQuery: (query) =>
-              query.state.status === 'success' && isComplaintQuery(query.queryKey),
+              query.state.status === 'success' &&
+              isPrivateUserQuery(query.queryKey, String(user.id)),
           });
           return AsyncStorage.setItem(
             `${PRIVATE_STORAGE_PREFIX}.${user.id}`,

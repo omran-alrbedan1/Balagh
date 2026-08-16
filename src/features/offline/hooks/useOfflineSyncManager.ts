@@ -81,7 +81,15 @@ export function flushOfflineQueue(queryClient: QueryClient): Promise<void> {
 
       try {
         await useOfflineQueueStore.getState().markSyncing(id);
-        await syncOfflineComplaint(toSyncPayload(current), current.attachments);
+        const syncResult = await syncOfflineComplaint(toSyncPayload(current), current.attachments);
+        const serverComplaint = syncResult.data.complaint;
+        if (!serverComplaint) {
+          throw new Error('Offline sync did not return a valid server complaint.');
+        }
+        queryClient.setQueryData(queryKeys.complaint(serverComplaint.id, ownerUserId), {
+          success: true,
+          data: serverComplaint,
+        });
         didSync = true;
         await useOfflineQueueStore.getState().markSynced(id);
       } catch (error) {

@@ -9,7 +9,6 @@ import {
 } from 'lucide-react-native';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
 
 import { Complaint } from '@/api/types/complaint.types';
 import { StatusBadge } from '@/features/complaints/components/StatusBadge';
@@ -20,13 +19,13 @@ import {
   getSlaCountdown,
 } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
+import { normalizeComplaintId } from '@/features/complaints/utils/complaintId';
 
 interface ComplaintCardProps {
   complaint: Complaint;
-  index?: number;
 }
 
-export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
+export function ComplaintCard({ complaint }: ComplaintCardProps) {
   const { t } = useTranslation();
   const slaCountdown = getSlaCountdown(complaint.due_at);
   const isBreached =
@@ -34,32 +33,29 @@ export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
   const priorityColor = complaint.priority?.color ?? colors.primary;
   const location = complaint.address;
   const categoryLabel = getDepartmentCategoryLabel(complaint);
+  const complaintId = normalizeComplaintId(complaint.id);
 
   return (
-    <Animated.View
-      entering={FadeIn.delay(index * 70).duration(260)}
-      layout={LinearTransition.duration(180)}
-    >
+    <View>
       <Pressable
         accessibilityLabel={t('home.openComplaint', { title: complaint.title })}
         accessibilityRole="button"
         className="mb-4 active:opacity-85"
-        onPress={() =>
+        disabled={!complaintId}
+        onPress={() => {
+          if (!complaintId) return;
           router.push({
             pathname: '/(app)/(tabs)/complaints/[id]',
-            params: { id: complaint.id },
-          })
-        }
+            params: { id: complaintId },
+          });
+        }}
       >
         <View className="rounded-2xl border-2 border-primary-100 bg-white shadow-md shadow-base-900/10">
           <View className="gap-4 p-4">
             <View className="flex-row items-start gap-3">
-              <Animated.View
-                className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50"
-                entering={ZoomIn.delay(index * 70 + 80).duration(220)}
-              >
+              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
                 <Flag color={priorityColor} size={20} />
-              </Animated.View>
+              </View>
 
               <View className="flex-1 gap-2">
                 <View className="flex-row items-start justify-between gap-2">
@@ -128,7 +124,7 @@ export function ComplaintCard({ complaint, index = 0 }: ComplaintCardProps) {
           </View>
         </View>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 

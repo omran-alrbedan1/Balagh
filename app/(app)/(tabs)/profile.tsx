@@ -12,12 +12,16 @@ import { useLogoutAll } from '@/features/auth/hooks/useLogoutAll';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { LanguageSwitcher } from '@/features/settings/components/LanguageSwitcher';
 import { NotificationPreferencesCard } from '@/features/notifications/components/NotificationPreferencesCard';
+import { useUnreadCount } from '@/features/notifications/hooks/useUnreadCount';
+import { formatUnreadBadge } from '@/features/notifications/utils/badge';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const logout = useLogout();
   const logoutAll = useLogoutAll();
+  const unreadCount = useUnreadCount().data?.data.count ?? 0;
+  const unreadBadge = formatUnreadBadge(unreadCount);
   const initial = user?.name?.charAt(0).toUpperCase() ?? t('home.citizen').charAt(0);
   const role = user?.role ?? t('profile.citizenRole');
 
@@ -84,6 +88,11 @@ export default function ProfileScreen() {
               <Text className="flex-1 text-base-900 dark:text-white text-base font-medium ml-3">
                 {item.label}
               </Text>
+              {index === 0 && unreadBadge ? (
+                <View className="min-w-6 items-center justify-center rounded-full bg-danger-600 px-1.5 py-0.5">
+                  <Text className="text-xs font-black text-white">{unreadBadge}</Text>
+                </View>
+              ) : null}
               <ChevronRight color="#9CA3AF" size={18} />
             </Pressable>
           );

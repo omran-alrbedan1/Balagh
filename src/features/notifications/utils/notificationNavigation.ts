@@ -1,6 +1,7 @@
 import { Href } from 'expo-router';
 
 import { COMPLAINT_NOTIFICATION_TYPES } from '@/api/types/notification.types';
+import { normalizeComplaintId } from '@/features/complaints/utils/complaintId';
 
 export interface NotificationNavigationData {
   type?: unknown;
@@ -11,16 +12,10 @@ export interface NotificationNavigationData {
   [key: string]: unknown;
 }
 
-function validComplaintId(value: unknown): string | null {
-  if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) return String(value);
-  if (typeof value === 'string' && /^\d+$/.test(value) && Number(value) > 0) return value;
-  return null;
-}
-
 export function resolveNotificationDestination(data: unknown): Href | null {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
   const payload = data as NotificationNavigationData;
-  const complaintId = validComplaintId(payload.complaint_id);
+  const complaintId = normalizeComplaintId(payload.complaint_id);
   if (!complaintId) return null;
 
   const isComplaintEvent =

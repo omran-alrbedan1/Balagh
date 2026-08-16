@@ -45,6 +45,35 @@ const mockedRemoveAttachments = removeOfflineAttachments as jest.MockedFunction<
 >;
 let queryClient: QueryClient;
 
+function syncEnvelope(id = '123') {
+  const complaint = {
+    id,
+    client_ref: 'stable-client-uuid',
+    client_uuid: 'stable-client-uuid',
+    title: 'Pothole',
+    description: 'Large pothole in the road',
+    department_id: '1',
+    category_id: '1',
+    status: 'submitted' as const,
+    attachments: [],
+    timeline: [],
+    created_at: '2026-01-01T00:00:00.000Z',
+  };
+  return {
+    success: true,
+    data: {
+      complaint,
+      offline_submission: {
+        id: '10',
+        client_uuid: 'stable-client-uuid',
+        status: 'synced' as const,
+        synced_complaint: complaint,
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  };
+}
+
 function queueItem(overrides: Partial<OfflineComplaintQueueItem> = {}): OfflineComplaintQueueItem {
   return {
     id: 'queue-1',
@@ -75,7 +104,7 @@ beforeEach(async () => {
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   useOfflineQueueStore.setState({ items: [queueItem()], isHydrated: true });
   useAuthStore.setState({ user: { id: 'user-1', name: 'Citizen' } });
-  mockedSync.mockResolvedValue({} as Awaited<ReturnType<typeof syncOfflineComplaint>>);
+  mockedSync.mockResolvedValue(syncEnvelope() as Awaited<ReturnType<typeof syncOfflineComplaint>>);
   mockedRemoveAttachments.mockResolvedValue();
   mockedNetwork.mockReturnValue({ status: 'online', isOnline: true } as ReturnType<
     typeof useNetworkStatus
@@ -98,10 +127,13 @@ it('uses one single-flight flush and uploads a stable client UUID once', async (
     expect.objectContaining({ client_uuid: 'stable-client-uuid' }),
     expect.any(Array),
   );
-  resolveSync({});
+  resolveSync(syncEnvelope());
   await first;
 
   expect(useOfflineQueueStore.getState().items).toHaveLength(0);
+  expect(queryClient.getQueryData(['complaints', 'user-1', 'detail', '123'])).toEqual(
+    expect.objectContaining({ data: expect.objectContaining({ id: '123' }) }),
+  );
   expect(mockedRemoveAttachments).toHaveBeenCalledWith(
     'file:///documents/offline-complaints/queue-1',
   );
@@ -152,7 +184,7 @@ it('does not upload a queued complaint owned by another signed-in user', async (
 it('manual retry reuses the same client UUID after a permanent failure', async () => {
   mockedSync
     .mockRejectedValueOnce(new ApiError('invalid payload', 422))
-    .mockResolvedValueOnce({} as any);
+    .mockResolvedValueOnce(syncEnvelope() as any);
 
   await flushOfflineQueue(queryClient);
   expect(useOfflineQueueStore.getState().items[0]).toEqual(

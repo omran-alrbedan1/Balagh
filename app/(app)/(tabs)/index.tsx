@@ -1,24 +1,33 @@
 import { router } from 'expo-router';
-import { Bell, Clock3, FilePlus2, Inbox, ShieldCheck, UserRound } from 'lucide-react-native';
+import { CheckCircle2, Clock3, FilePlus2, Inbox, ShieldCheck } from 'lucide-react-native';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { DashboardComplaint, HomeDashboard } from '@/api/endpoints/home.api';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { StatusBadge } from '@/features/complaints/components/StatusBadge';
+import { normalizeComplaintId } from '@/features/complaints/utils/complaintId';
+import { formatDate } from '@/features/complaints/utils/complaintDisplay';
 import { useHomeStats } from '@/features/home/hooks/useHomeStats';
+import { useUnreadCount } from '@/features/notifications/hooks/useUnreadCount';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
-import { useUnreadCount } from '@/features/notifications/hooks/useUnreadCount';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
-  const { data: stats, isLoading, isRefetching, refetch } = useHomeStats();
+  const dashboardQuery = useHomeStats();
   const unreadQuery = useUnreadCount();
-  const unreadCount = unreadQuery.data?.data.count ?? 0;
+  const dashboard = dashboardQuery.data?.data;
+  const isInitialLoading = dashboardQuery.isLoading && !dashboard;
+
+  const refresh = async () => {
+    await Promise.all([dashboardQuery.refetch(), unreadQuery.refetch()]);
+  };
 
   return (
     <Screen
@@ -26,37 +35,12 @@ export default function HomeScreen() {
       title={t('home.title')}
       refreshControl={
         <RefreshControl
-          onRefresh={() => void refetch()}
-          refreshing={isRefetching}
+          onRefresh={() => void refresh()}
+          refreshing={dashboardQuery.isRefetching || unreadQuery.isRefetching}
           tintColor={colors.primary}
         />
       }
     >
-      <Pressable
-        accessibilityLabel={t('notifications.openInbox', { count: unreadCount })}
-        accessibilityRole="button"
-        onPress={() => router.push('/(app)/(tabs)/notifications')}
-        style={({ pressed }) => [styles.notificationEntry, pressed && styles.pressed]}
-      >
-        <Bell color={colors.primary} size={22} />
-        <Text style={styles.notificationEntryText}>{t('notifications.title')}</Text>
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-          </View>
-        )}
-      </Pressable>
-
-      <Pressable
-        accessibilityLabel={t('profile.title')}
-        accessibilityRole="button"
-        onPress={() => router.push('/(app)/(tabs)/profile')}
-        style={({ pressed }) => [styles.profileEntry, pressed && styles.pressed]}
-      >
-        <UserRound color={colors.primary} size={22} />
-        <Text style={styles.notificationEntryText}>{t('profile.title')}</Text>
-      </Pressable>
-
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
           <ShieldCheck color={colors.primary} size={24} />
@@ -67,105 +51,174 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.statsGrid}>
-        <Card style={styles.statCard}>
-          <View style={styles.statHeader}>
-            <Text style={styles.statLabel}>{t('home.openComplaints')}</Text>
-            <FilePlus2 color={colors.primary} size={18} />
-          </View>
-          <Text style={styles.statValue}>{isLoading ? '-' : (stats?.openComplaints ?? 0)}</Text>
-        </Card>
-        <Card style={styles.statCard}>
-          <View style={styles.statHeader}>
-            <Text style={styles.statLabel}>{t('home.pendingSla')}</Text>
-            <Clock3 color={colors.warning} size={18} />
-          </View>
-          <Text style={styles.statValue}>{isLoading ? '-' : (stats?.pendingSla ?? 0)}</Text>
-        </Card>
-      </View>
+      {isInitialLoading ? <SummaryCards /> : null}
+
+      {!dashboard && dashboardQuery.isError ? (
+        <View style={styles.section}>
+          <EmptyState
+            icon={Inbox}
+            title={t('home.dashboardUnavailable')}
+            message={t('home.dashboardUnavailableMessage')}
+          />
+          <Button label={t('common.retry')} onPress={() => void refresh()} variant="secondary" />
+        </View>
+      ) : null}
+
+      {dashboard ? <HomeDashboardContent dashboard={dashboard} /> : null}
 
       <Button
         label={t('home.newComplaint')}
         iconLeft={<FilePlus2 color="#FFFFFF" size={19} />}
         onPress={() => router.push('/(app)/(tabs)/complaints/new')}
       />
+    </Screen>
+  );
+}
+
+function HomeDashboardContent({ dashboard }: { dashboard: HomeDashboard }) {
+  const { t } = useTranslation();
+  const actionRequired = dashboard.action_required;
+
+  return (
+    <>
+      <SummaryCards counts={dashboard.counts} />
+
+      {dashboard.counts.waiting_citizen > 0 && actionRequired.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('home.actionRequired')}</Text>
+          {actionRequired.map((complaint) => (
+            <ActionRequiredCard complaint={complaint} key={complaint.id} />
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
-        {!isLoading && (!stats?.recentActivity || stats.recentActivity.length === 0) ? (
+        <Text style={styles.sectionTitle}>{t('home.recentComplaints')}</Text>
+        {dashboard.recent_complaints.length === 0 ? (
           <EmptyState
             icon={Inbox}
             title={t('home.noComplaintsTitle')}
             message={t('home.noComplaintsMessage')}
           />
         ) : (
-          stats?.recentActivity.map((item) => (
-            <Card key={item.id}>
-              <Text style={styles.activityTitle}>{item.title}</Text>
-              <View style={styles.activityMeta}>
-                <View style={styles.statusPill}>
-                  <Text style={styles.statusText}>{item.status.replaceAll('_', ' ')}</Text>
-                </View>
-                <Text style={styles.activityDate}>{item.date}</Text>
-              </View>
-            </Card>
+          dashboard.recent_complaints.map((complaint) => (
+            <RecentComplaintCard complaint={complaint} key={complaint.id} />
           ))
         )}
       </View>
-    </Screen>
+    </>
   );
 }
 
+function SummaryCards({ counts }: { counts?: HomeDashboard['counts'] }) {
+  const { t } = useTranslation();
+
+  const cards = [
+    { icon: FilePlus2, label: t('home.activeComplaints'), value: counts?.active },
+    { icon: Clock3, label: t('home.waitingForResponse'), value: counts?.waiting_citizen },
+    { icon: CheckCircle2, label: t('home.completedComplaints'), value: counts?.completed },
+  ];
+
+  return (
+    <View style={styles.statsGrid}>
+      {cards.map(({ icon: Icon, label, value }) => (
+        <Card key={label} style={styles.statCard}>
+          <View style={styles.statHeader}>
+            <Icon color={colors.primary} size={18} />
+          </View>
+          <Text style={styles.statValue}>{typeof value === 'number' ? value : '-'}</Text>
+          <Text style={styles.statLabel}>{label}</Text>
+        </Card>
+      ))}
+    </View>
+  );
+}
+
+function ActionRequiredCard({ complaint }: { complaint: DashboardComplaint }) {
+  const { t } = useTranslation();
+
+  return (
+    <Pressable
+      accessibilityLabel={t('home.openActionRequired', { title: complaint.title })}
+      accessibilityRole="button"
+      onPress={() => openComplaint(complaint.id)}
+      style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.cardText}>
+          {complaint.complaint_number ? (
+            <Text style={styles.reference}>{complaint.complaint_number}</Text>
+          ) : null}
+          <Text numberOfLines={2} style={styles.complaintTitle}>
+            {complaint.title}
+          </Text>
+        </View>
+        <StatusBadge status={complaint.status} />
+      </View>
+      <Text style={styles.actionMessage}>{t('home.additionalInformationRequired')}</Text>
+      <Text style={styles.openAction}>{t('home.openComplaintAction')}</Text>
+    </Pressable>
+  );
+}
+
+function RecentComplaintCard({ complaint }: { complaint: DashboardComplaint }) {
+  const { t } = useTranslation();
+  const location = [complaint.department?.name, complaint.category?.name]
+    .filter(Boolean)
+    .join(' / ');
+
+  return (
+    <Pressable
+      accessibilityLabel={t('home.openComplaint', { title: complaint.title })}
+      accessibilityRole="button"
+      onPress={() => openComplaint(complaint.id)}
+      style={({ pressed }) => [styles.recentCard, pressed && styles.pressed]}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.cardText}>
+          {complaint.complaint_number ? (
+            <Text style={styles.reference}>{complaint.complaint_number}</Text>
+          ) : null}
+          <Text numberOfLines={2} style={styles.complaintTitle}>
+            {complaint.title}
+          </Text>
+        </View>
+        <StatusBadge status={complaint.status} />
+      </View>
+      <View style={styles.cardFooter}>
+        <Text numberOfLines={1} style={styles.meta}>
+          {location || t('common.notAvailable')}
+        </Text>
+        <Text style={styles.meta}>{formatDate(complaint.created_at)}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function openComplaint(id: string) {
+  const complaintId = normalizeComplaintId(id);
+  if (!complaintId) return;
+  router.push({ pathname: '/(app)/(tabs)/complaints/[id]', params: { id: complaintId } });
+}
+
 const styles = StyleSheet.create({
-  badge: {
-    alignItems: 'center',
-    backgroundColor: colors.danger,
-    borderRadius: 12,
-    justifyContent: 'center',
-    minHeight: 24,
-    minWidth: 24,
-    paddingHorizontal: 6,
-  },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
-  notificationEntry: {
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
+  actionCard: {
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warning,
     borderRadius: 12,
     borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  actionMessage: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  cardFooter: {
     flexDirection: 'row',
     gap: spacing.sm,
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
-  },
-  profileEntry: {
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing.sm,
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
-  },
-  notificationEntryText: { color: colors.text, flex: 1, fontWeight: '800' },
-  pressed: { opacity: 0.7 },
-  activityDate: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  activityMeta: {
-    alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
   },
-  activityTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  cardHeader: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.sm },
+  cardText: { flex: 1, gap: spacing.xs },
+  complaintTitle: { color: colors.text, fontSize: 16, fontWeight: '900' },
   hero: {
     alignItems: 'center',
     backgroundColor: colors.card,
@@ -186,60 +239,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 48,
   },
-  heroText: {
-    flex: 1,
-  },
-  name: {
-    color: colors.text,
-    fontSize: 30,
-    fontWeight: '900',
-  },
-  section: {
+  heroText: { flex: 1 },
+  meta: { color: colors.textMuted, flex: 1, fontSize: 12, fontWeight: '600' },
+  name: { color: colors.text, fontSize: 30, fontWeight: '900' },
+  openAction: { color: colors.primary, fontSize: 14, fontWeight: '900' },
+  pressed: { opacity: 0.72 },
+  recentCard: {
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderRadius: 12,
+    borderWidth: 1,
     gap: spacing.md,
-    marginTop: spacing.md,
+    padding: spacing.md,
   },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  statLabel: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  statCard: {
-    flex: 1,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  statHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statValue: {
-    color: colors.text,
-    fontSize: 32,
-    fontWeight: '900',
-  },
-  statusPill: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  statusText: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'capitalize',
-  },
-  welcome: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  reference: { color: colors.primary, fontSize: 12, fontWeight: '900' },
+  section: { gap: spacing.md },
+  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '900' },
+  statCard: { flex: 1, gap: spacing.xs, minWidth: '30%' },
+  statHeader: { alignItems: 'flex-end' },
+  statLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '800', lineHeight: 16 },
+  statValue: { color: colors.text, fontSize: 28, fontWeight: '900' },
+  statsGrid: { flexDirection: 'row', gap: spacing.sm },
+  welcome: { color: colors.primary, fontSize: 16, fontWeight: '700' },
 });

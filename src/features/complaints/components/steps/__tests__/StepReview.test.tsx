@@ -62,7 +62,7 @@ beforeEach(() => {
 });
 
 it.each([
-  [{ complaint: { id: 'complaint-1' }, queued: false }, 'detail'],
+  [{ complaint: { id: '1' }, queued: false }, 'detail'],
   [{ queued: true }, 'index'],
   [{ complaint: undefined, queued: false }, 'index'],
 ] as const)(
@@ -79,8 +79,8 @@ it.each([
     expect(onSubmissionSuccess).toHaveBeenCalledTimes(1);
     expect(router.replace).toHaveBeenCalledWith(
       route === 'detail'
-        ? { pathname: '/(app)/(tabs)/complaints/[id]', params: { id: 'complaint-1' } }
-        : '/(app)/(tabs)/complaints/index',
+        ? { pathname: '/(app)/(tabs)/complaints/[id]', params: { id: '1' } }
+        : '/(app)/(tabs)/complaints',
     );
   },
 );

@@ -128,6 +128,30 @@ it('recovers a stale syncing item to queued during hydration', async () => {
   );
 });
 
+it('quarantines malformed and duplicate persisted queue records during hydration', async () => {
+  const valid = {
+    id: 'valid-1',
+    client_uuid: 'stable-id',
+    payload,
+    attachments: [],
+    status: 'queued',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    retryCount: 0,
+  };
+  await AsyncStorage.setItem(
+    'balagh.offlineQueue.v2',
+    JSON.stringify({
+      version: 2,
+      items: [null, { id: 'broken' }, valid, { ...valid, id: 'duplicate-client' }, valid],
+    }),
+  );
+  useOfflineQueueStore.setState({ items: [], isHydrated: false });
+
+  await useOfflineQueueStore.getState().hydrate();
+
+  expect(useOfflineQueueStore.getState().items).toEqual([valid]);
+});
+
 it('manual retry resets a terminal failed item without changing its client UUID', async () => {
   const item = await useOfflineQueueStore.getState().enqueue({ attachments: [], payload });
   await useOfflineQueueStore.getState().markFailed(item.id, 'bad request', false);

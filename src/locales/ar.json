@@ -1,12 +1,14 @@
 {
   "appName": "بلاغ",
   "navigation": {
+    "profile": "الملف الشخصي",
     "home": "الرئيسية",
     "complaints": "البلاغات",
     "newComplaint": "بلاغ جديد",
     "notifications": "الإشعارات"
   },
   "common": {
+    "retry": "إعادة المحاولة",
     "address": "العنوان",
     "all": "الكل",
     "appVersion": "إصدار التطبيق",
@@ -94,6 +96,16 @@
     "updatesDescription": "تابع تغيّر الحالة والجدول الزمني وتقدم المعالجة من هاتفك."
   },
   "home": {
+    "actionRequired": "يتطلب انتباهك",
+    "activeComplaints": "الشكاوى النشطة",
+    "additionalInformationRequired": "مطلوب معلومات إضافية",
+    "completedComplaints": "الشكاوى المكتملة",
+    "dashboardUnavailable": "تعذر تحميل بيانات الصفحة الرئيسية",
+    "dashboardUnavailableMessage": "تحقق من الاتصال وحاول مرة أخرى. ستظهر آخر بيانات محفوظة عند توفرها.",
+    "openActionRequired": "فتح البلاغ الذي يتطلب إجراءً {{title}}",
+    "openComplaintAction": "فتح البلاغ",
+    "recentComplaints": "أحدث الشكاوى",
+    "waitingForResponse": "بانتظار ردك",
     "citizen": "مواطن",
     "newComplaint": "تقديم بلاغ جديد",
     "noComplaintsMessage": "بعد تقديم أول بلاغ، ستظهر آخر تحديثاته هنا.",
@@ -189,6 +201,8 @@
     "noAttachments": "لم يتم إرفاق ملفات مع هذا البلاغ.",
     "notFoundMessage": "قد يكون هذا البلاغ محذوفاً أو غير متاح لحسابك.",
     "notFoundTitle": "لم يتم العثور على البلاغ",
+    "invalidIdMessage": "ارجع إلى الشكاوى وافتح شكوى صالحة.",
+    "invalidIdTitle": "رابط الشكوى غير صالح",
     "photoCaption": "{{count}}/{{max}} صور مرفقة (اختياري لكن موصى به)",
     "photos": "الصور ({{count}})",
     "priorityPending": "الأولوية قيد التحديد",

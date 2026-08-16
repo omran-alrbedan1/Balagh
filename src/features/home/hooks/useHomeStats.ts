@@ -1,30 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-export interface HomeActivityItem {
-  id: string;
-  date: string;
-  status: string;
-  title: string;
-}
-
-export interface HomeStats {
-  openComplaints: number;
-  pendingSla: number;
-  recentActivity: HomeActivityItem[];
-}
-
-async function fetchHomeStatsStub(): Promise<HomeStats> {
-  return {
-    openComplaints: 0,
-    pendingSla: 0,
-    recentActivity: [],
-  };
-}
+import { getHomeDashboard } from '@/api/endpoints/home.api';
+import { queryKeys } from '@/constants/queryKeys';
 
 export function useHomeStats() {
   return useQuery({
-    queryKey: ['home', 'stats'],
-    queryFn: fetchHomeStatsStub,
+    queryKey: queryKeys.homeDashboard,
+    queryFn: getHomeDashboard,
+    retry: false,
     staleTime: 60_000,
   });
 }

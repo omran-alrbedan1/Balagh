@@ -11,6 +11,7 @@ import { useCreateComplaint } from '@/features/complaints/hooks/useCreateComplai
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import { useCategories } from '@/features/lookups/hooks/useCategories';
 import { useDepartments } from '@/features/lookups/hooks/useDepartments';
+import { normalizeComplaintId } from '@/features/complaints/utils/complaintId';
 
 interface StepReviewProps {
   onBack: () => void;
@@ -34,18 +35,19 @@ export function StepReview({ onBack, onSubmissionSuccess }: StepReviewProps) {
         onSubmissionSuccess();
 
         if (result.queued) {
-          router.replace('/(app)/(tabs)/complaints/index');
+          router.replace('/(app)/(tabs)/complaints');
           return;
         }
 
-        if (!result.complaint?.id) {
-          router.replace('/(app)/(tabs)/complaints/index');
+        const complaintId = normalizeComplaintId(result.complaint?.id);
+        if (!complaintId) {
+          router.replace('/(app)/(tabs)/complaints');
           return;
         }
 
         router.replace({
           pathname: '/(app)/(tabs)/complaints/[id]',
-          params: { id: result.complaint.id },
+          params: { id: complaintId },
         });
       },
     });

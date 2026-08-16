@@ -66,6 +66,40 @@ async function readItems(): Promise<OfflineComplaintQueueItem[]> {
   return Array.isArray(parsed) ? (parsed as OfflineComplaintQueueItem[]) : [];
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isQueueItem(value: unknown): value is OfflineComplaintQueueItem {
+  if (!isRecord(value) || !isRecord(value.payload)) return false;
+  return (
+    typeof value.id === 'string' &&
+    value.id.length > 0 &&
+    typeof value.client_uuid === 'string' &&
+    value.client_uuid.length > 0 &&
+    typeof value.payload.title === 'string' &&
+    typeof value.payload.description === 'string' &&
+    Array.isArray(value.attachments) &&
+    ['queued', 'syncing', 'failed', 'synced'].includes(String(value.status)) &&
+    typeof value.createdAt === 'string' &&
+    typeof value.retryCount === 'number'
+  );
+}
+
+export function sanitizeOfflineQueueItems(items: unknown[]): OfflineComplaintQueueItem[] {
+  const seenIds = new Set<string>();
+  const seenClientUuids = new Set<string>();
+
+  return items.filter((item): item is OfflineComplaintQueueItem => {
+    if (!isQueueItem(item)) return false;
+    const ownerClientKey = `${item.ownerUserId ?? 'legacy'}:${item.client_uuid}`;
+    if (seenIds.has(item.id) || seenClientUuids.has(ownerClientKey)) return false;
+    seenIds.add(item.id);
+    seenClientUuids.add(ownerClientKey);
+    return true;
+  });
+}
+
 async function persistItems(items: OfflineComplaintQueueItem[]) {
   const queue: PersistedQueue = { version: SCHEMA_VERSION, items };
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
@@ -93,7 +127,11 @@ export const useOfflineQueueStore = create<OfflineQueueState>((set, get) => {
       }
 
       try {
-        let items = await readItems();
+        const persistedItems = await readItems();
+        let items = sanitizeOfflineQueueItems(persistedItems);
+        if (items.length !== persistedItems.length) {
+          await persistItems(items);
+        }
         const recovered = items.map((item) =>
           item.status === 'syncing'
             ? {

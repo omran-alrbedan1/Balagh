@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Bell, FileText, Home, PlusCircle } from 'lucide-react-native';
+import { FileText, Home, PlusCircle, UserRound } from 'lucide-react-native';
 import { Platform, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +46,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="complaints/index"
         options={{
+          href: '/(app)/(tabs)/complaints',
           title: t('navigation.complaints'),
           tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />,
         }}
@@ -68,10 +69,11 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen
-        name="notifications"
+        name="profile"
         options={{
-          title: t('navigation.notifications'),
+          title: t('navigation.profile'),
           tabBarBadge: formatUnreadBadge(unreadCount),
           tabBarBadgeStyle: {
             backgroundColor: colors.danger,
@@ -79,10 +81,9 @@ export default function TabsLayout() {
             fontSize: 10,
             fontWeight: '800',
           },
-          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <UserRound color={color} size={size} />,
         }}
       />
-      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="edit-profile" options={{ href: null }} />
       <Tabs.Screen name="complaints/[id]" options={{ href: null }} />
     </Tabs>

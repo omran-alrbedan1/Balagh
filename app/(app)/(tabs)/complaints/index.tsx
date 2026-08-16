@@ -112,7 +112,7 @@ export default function MyComplaintsScreen() {
               tintColor={colors.primary}
             />
           }
-          renderItem={({ index, item }) => <ComplaintCard complaint={item} index={index} />}
+          renderItem={({ item }) => <ComplaintCard complaint={item} />}
           showsVerticalScrollIndicator={false}
         />
       )}

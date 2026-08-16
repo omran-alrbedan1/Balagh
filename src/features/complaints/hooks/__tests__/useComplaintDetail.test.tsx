@@ -14,13 +14,24 @@ beforeEach(() => {
 });
 
 it('always reconciles complaint detail with the server when opened from a stale notification', () => {
-  renderHook(() => useComplaintDetail('complaint-7'));
+  renderHook(() => useComplaintDetail('7'));
 
   expect(mockedUseQuery).toHaveBeenCalledWith(
     expect.objectContaining({
       enabled: true,
-      queryKey: ['complaints', 'complaint-7'],
+      queryKey: ['complaints', 'anonymous', 'detail', '7'],
       refetchOnMount: 'always',
+    }),
+  );
+});
+
+it.each(['index', 'new'])('disables the detail query for invalid route ID %s', (id) => {
+  renderHook(() => useComplaintDetail(id));
+
+  expect(mockedUseQuery).toHaveBeenCalledWith(
+    expect.objectContaining({
+      enabled: false,
+      queryKey: ['complaints', 'anonymous', 'detail', 'invalid'],
     }),
   );
 });

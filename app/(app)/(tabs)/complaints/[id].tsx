@@ -12,7 +12,7 @@ import {
   TimerReset,
   UserCheck,
 } from 'lucide-react-native';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Image, RefreshControl, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn, LinearTransition, ZoomIn } from 'react-native-reanimated';
@@ -37,22 +37,32 @@ import {
   getSlaStatus,
 } from '@/features/complaints/utils/complaintDisplay';
 import { colors } from '@/theme/colors';
+import { normalizeComplaintId } from '@/features/complaints/utils/complaintId';
 
 export default function ComplaintDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
-  const complaintId = Array.isArray(id) ? id[0] : (id ?? '');
+  const rawComplaintId = Array.isArray(id) ? id[0] : id;
+  const complaintId = normalizeComplaintId(rawComplaintId);
   const complaintQuery = useComplaintDetail(complaintId);
   const complaint = extractComplaint(complaintQuery.data);
+
+  useEffect(() => {
+    if (__DEV__ && rawComplaintId != null && !complaintId) {
+      console.warn('Blocked invalid complaint detail route parameter.');
+    }
+  }, [complaintId, rawComplaintId]);
 
   return (
     <Screen
       refreshControl={
-        <RefreshControl
-          onRefresh={() => void complaintQuery.refetch()}
-          refreshing={complaintQuery.isRefetching}
-          tintColor={colors.primary}
-        />
+        complaintId ? (
+          <RefreshControl
+            onRefresh={() => void complaintQuery.refetch()}
+            refreshing={complaintQuery.isRefetching}
+            tintColor={colors.primary}
+          />
+        ) : undefined
       }
       subtitle={
         complaint
@@ -61,11 +71,22 @@ export default function ComplaintDetailScreen() {
       }
       title={t('complaints.detailTitle')}
     >
-      {complaintQuery.isLoading ? <LoadingSpinner label={t('complaints.detailLoading')} /> : null}
+      {!complaintId ? (
+        <EmptyState
+          title={t('complaints.invalidIdTitle')}
+          message={t('complaints.invalidIdMessage')}
+        />
+      ) : null}
 
-      {complaintQuery.error ? <ErrorState message={complaintQuery.error.message} /> : null}
+      {complaintId && complaintQuery.isLoading ? (
+        <LoadingSpinner label={t('complaints.detailLoading')} />
+      ) : null}
 
-      {!complaintQuery.isLoading && !complaintQuery.error && !complaint ? (
+      {complaintId && complaintQuery.error ? (
+        <ErrorState message={complaintQuery.error.message} />
+      ) : null}
+
+      {complaintId && !complaintQuery.isLoading && !complaintQuery.error && !complaint ? (
         <EmptyState
           title={t('complaints.notFoundTitle')}
           message={t('complaints.notFoundMessage')}
