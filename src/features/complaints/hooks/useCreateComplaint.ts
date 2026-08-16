@@ -1,16 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import i18next from 'i18next';
 
 import { createComplaint, extractComplaint } from '@/api/endpoints/complaints.api';
 import { CreateComplaintPayload } from '@/api/types/complaint.types';
 import { queryKeys } from '@/constants/queryKeys';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
 import { useOfflineQueueStore } from '@/features/complaints/store/offlineQueueStore';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export function useCreateComplaint() {
   const queryClient = useQueryClient();
   const { isOnline } = useNetworkStatus();
   const enqueue = useOfflineQueueStore((state) => state.enqueue);
+  const userId = useAuthStore((state) => state.user?.id);
 
   return useMutation({
     mutationFn: async () => {
@@ -36,11 +39,18 @@ export function useCreateComplaint() {
             },
       );
 
-      if (!isOnline) {
-        await enqueue({
-          attachments,
-          payload,
-        });
+      const requiresServerClassification = !draft.departmentId || !draft.categoryId;
+
+      if (!isOnline || requiresServerClassification) {
+        try {
+          await enqueue({
+            attachments,
+            ownerUserId: userId == null ? undefined : String(userId),
+            payload,
+          });
+        } catch {
+          throw new Error(i18next.t('offline.queueSaveError'));
+        }
         return { queued: true as const };
       }
 

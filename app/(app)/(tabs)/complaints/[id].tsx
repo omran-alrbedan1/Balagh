@@ -25,6 +25,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ComplaintTimeline } from '@/features/complaints/components/ComplaintTimeline';
+import { ComplaintInformationRequestSection } from '@/features/complaints/components/ComplaintInformationRequestSection';
 import { StatusBadge } from '@/features/complaints/components/StatusBadge';
 import { useComplaintDetail } from '@/features/complaints/hooks/useComplaintDetail';
 import {
@@ -71,12 +72,23 @@ export default function ComplaintDetailScreen() {
         />
       ) : null}
 
-      {complaint ? <ComplaintDetailContent complaint={complaint} /> : null}
+      {complaint ? (
+        <ComplaintDetailContent
+          complaint={complaint}
+          refreshComplaint={async () => extractComplaint((await complaintQuery.refetch()).data)}
+        />
+      ) : null}
     </Screen>
   );
 }
 
-function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
+function ComplaintDetailContent({
+  complaint,
+  refreshComplaint,
+}: {
+  complaint: Complaint;
+  refreshComplaint: () => Promise<Complaint | undefined>;
+}) {
   const { t } = useTranslation();
   const slaCountdown = getSlaCountdown(complaint.due_at);
   const slaStatus = getSlaStatus(complaint.due_at, complaint.is_sla_breached);
@@ -91,6 +103,11 @@ function ComplaintDetailContent({ complaint }: { complaint: Complaint }) {
 
   return (
     <View className="gap-4">
+      <ComplaintInformationRequestSection
+        complaint={complaint}
+        refreshComplaint={refreshComplaint}
+      />
+
       <Animated.View entering={ZoomIn.duration(240).springify().damping(18)}>
         <Card>
           <View className="gap-4">

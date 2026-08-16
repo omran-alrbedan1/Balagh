@@ -10,6 +10,7 @@ const RETRY_DELAY_MS = 1500;
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   __retryCount?: number;
+  skipNetworkRetry?: boolean;
 }
 
 function isRetryableNetworkError(error: unknown): boolean {
@@ -104,7 +105,7 @@ apiClient.interceptors.response.use(
         : undefined;
       const retryCount = config?.__retryCount ?? 0;
 
-      if (config && retryCount < MAX_RETRIES) {
+      if (config && !config.skipNetworkRetry && retryCount < MAX_RETRIES) {
         config.__retryCount = retryCount + 1;
         await delay(RETRY_DELAY_MS * (retryCount + 1));
         return apiClient.request(config);

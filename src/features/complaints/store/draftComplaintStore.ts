@@ -14,6 +14,7 @@ export interface DraftAttachment {
 }
 
 export interface DraftClassification {
+  applicationStatus: 'idle' | 'pending' | 'applied' | 'overridden' | 'invalid';
   status: 'idle' | 'loading' | 'success' | 'error';
   departmentId?: string;
   departmentName?: string;
@@ -34,6 +35,9 @@ interface DraftComplaintState {
   location?: ComplaintLocation;
   title: string;
   addAttachment: (attachment: Omit<DraftAttachment, 'id'>) => void;
+  applyClassificationCategory: (id: string) => void;
+  applyClassificationDepartment: (id: string) => void;
+  markClassificationInvalid: () => void;
   removeAttachment: (id: string) => void;
   reset: () => void;
   setCategory: (id: string) => void;
@@ -63,6 +67,7 @@ function createInitialState() {
     categoryId: undefined,
     clientRef: newClientRef(),
     classification: {
+      applicationStatus: 'idle' as const,
       confidence: 0,
       status: 'idle' as const,
     },
@@ -79,15 +84,82 @@ export const useDraftComplaintStore = create<DraftComplaintState>((set) => ({
     set((state) => ({
       attachments: [...state.attachments, { id: newClientRef('attachment'), ...attachment }],
     })),
+  applyClassificationCategory: (id) =>
+    set((state) => {
+      if (
+        state.classification.status !== 'success' ||
+        state.classification.applicationStatus !== 'pending'
+      ) {
+        return state;
+      }
+
+      return {
+        categoryId: id,
+        classification: { ...state.classification, applicationStatus: 'applied' },
+      };
+    }),
+  applyClassificationDepartment: (id) =>
+    set((state) => {
+      if (
+        state.classification.status !== 'success' ||
+        state.classification.applicationStatus !== 'pending'
+      ) {
+        return state;
+      }
+
+      return { categoryId: undefined, departmentId: id };
+    }),
+  markClassificationInvalid: () =>
+    set((state) => {
+      if (state.classification.applicationStatus !== 'pending') {
+        return state;
+      }
+
+      return {
+        classification: { ...state.classification, applicationStatus: 'invalid' },
+      };
+    }),
   removeAttachment: (id) =>
     set((state) => ({
       attachments: state.attachments.filter((attachment) => attachment.id !== id),
     })),
   reset: () => set(createInitialState()),
-  setCategory: (id) => set({ categoryId: id }),
+  setCategory: (id) =>
+    set((state) => ({
+      categoryId: id,
+      classification:
+        state.classification.status === 'loading' || state.classification.status === 'success'
+          ? { ...state.classification, applicationStatus: 'overridden' }
+          : state.classification,
+    })),
   setClassification: (classification) =>
-    set((state) => ({ classification: { ...state.classification, ...classification } })),
-  setDepartment: (id) => set({ categoryId: undefined, departmentId: id }),
+    set((state) => {
+      const isSuccessfulResult = classification.status === 'success';
+      const applicationStatus = isSuccessfulResult
+        ? state.classification.applicationStatus === 'overridden'
+          ? 'overridden'
+          : 'pending'
+        : classification.status === 'loading'
+          ? 'idle'
+          : state.classification.applicationStatus;
+
+      return {
+        classification: {
+          ...state.classification,
+          ...classification,
+          applicationStatus,
+        },
+      };
+    }),
+  setDepartment: (id) =>
+    set((state) => ({
+      categoryId: undefined,
+      departmentId: id,
+      classification:
+        state.classification.status === 'loading' || state.classification.status === 'success'
+          ? { ...state.classification, applicationStatus: 'overridden' }
+          : state.classification,
+    })),
   setLocation: (location) => set({ location }),
   setTitleDescription: (title, description) => set({ description, title }),
 }));

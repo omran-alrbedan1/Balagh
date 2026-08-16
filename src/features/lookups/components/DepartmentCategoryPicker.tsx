@@ -52,6 +52,7 @@ export function DepartmentCategoryPicker({
     isError: didCategoriesFail,
     isFetching: isFetchingCategories,
     isLoading: isLoadingCategories,
+    isSuccess: hasCategories,
   } = useCategories(departmentId);
 
   const departmentOptions: SelectOption[] = useMemo(
@@ -77,12 +78,14 @@ export function DepartmentCategoryPicker({
   };
 
   useEffect(() => {
-    const isSelectedCategoryAvailable = categories?.some((category) => category.id === categoryId);
+    const isSelectedCategoryAvailable = categories?.some(
+      (category) => category.id === categoryId && category.department_id === departmentId,
+    );
 
-    if (categoryId && categories && !isSelectedCategoryAvailable) {
+    if (categoryId && hasCategories && !isFetchingCategories && !isSelectedCategoryAvailable) {
       onCategoryChange('');
     }
-  }, [categories, categoryId, onCategoryChange]);
+  }, [categories, categoryId, departmentId, hasCategories, isFetchingCategories, onCategoryChange]);
 
   return (
     <View style={{ gap: spacing.md, marginBottom: 32 }}>

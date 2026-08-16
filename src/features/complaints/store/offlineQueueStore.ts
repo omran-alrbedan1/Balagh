@@ -4,128 +4,229 @@ import { create } from 'zustand';
 import { AttachmentUpload } from '@/api/endpoints/complaints.api';
 import { CreateComplaintPayload } from '@/api/types/complaint.types';
 import {
-  OfflineComplaintQueueItem,
-  OfflineQueueStatus,
-} from '@/features/complaints/utils/offlineQueue';
+  persistOfflineAttachments,
+  removeOfflineAttachments,
+} from '@/features/complaints/utils/offlineAttachmentStorage';
+import { OfflineComplaintQueueItem } from '@/features/complaints/utils/offlineQueue';
 import { generateUUID } from '@/features/offline/utils/uuid';
 
-const STORAGE_KEY = 'balagh.offlineQueue.v1';
+const STORAGE_KEY = 'balagh.offlineQueue.v2';
+const LEGACY_STORAGE_KEY = 'balagh.offlineQueue.v1';
+const SCHEMA_VERSION = 2;
 export const MAX_RETRIES = 5;
+
+interface PersistedQueue {
+  version: number;
+  items: OfflineComplaintQueueItem[];
+}
 
 export interface EnqueueInput {
   attachments: AttachmentUpload[];
+  ownerUserId?: string;
   payload: CreateComplaintPayload;
 }
 
 interface OfflineQueueState {
   items: OfflineComplaintQueueItem[];
   isHydrated: boolean;
+  hydrationError?: string;
   hydrate: () => Promise<void>;
   enqueue: (input: EnqueueInput) => Promise<OfflineComplaintQueueItem>;
   markSyncing: (id: string) => Promise<void>;
-  markFailed: (id: string, error: string) => Promise<void>;
+  markFailed: (id: string, error: string, retryable: boolean) => Promise<void>;
   markSynced: (id: string) => Promise<void>;
+  retry: (id: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
 }
 
-function readItems(): Promise<OfflineComplaintQueueItem[]> {
-  return AsyncStorage.getItem(STORAGE_KEY)
-    .then((raw) => {
-      if (!raw) {
-        return [];
+let writeChain: Promise<void> = Promise.resolve();
+
+function serializeWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const result = writeChain.then(operation, operation);
+  writeChain = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
+async function readItems(): Promise<OfflineComplaintQueueItem[]> {
+  const current = await AsyncStorage.getItem(STORAGE_KEY);
+  if (current) {
+    const parsed = JSON.parse(current) as Partial<PersistedQueue>;
+    return parsed.version === SCHEMA_VERSION && Array.isArray(parsed.items) ? parsed.items : [];
+  }
+
+  const legacy = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!legacy) {
+    return [];
+  }
+
+  const parsed: unknown = JSON.parse(legacy);
+  return Array.isArray(parsed) ? (parsed as OfflineComplaintQueueItem[]) : [];
+}
+
+async function persistItems(items: OfflineComplaintQueueItem[]) {
+  const queue: PersistedQueue = { version: SCHEMA_VERSION, items };
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+}
+
+function backoffMs(retryCount: number) {
+  return [2_000, 5_000, 15_000, 30_000, 60_000][Math.min(retryCount, 4)];
+}
+
+export const useOfflineQueueStore = create<OfflineQueueState>((set, get) => {
+  const update = (transform: (items: OfflineComplaintQueueItem[]) => OfflineComplaintQueueItem[]) =>
+    serializeWrite(async () => {
+      const items = transform(get().items);
+      await persistItems(items);
+      set({ items });
+    });
+
+  return {
+    items: [],
+    isHydrated: false,
+
+    hydrate: async () => {
+      if (get().isHydrated) {
+        return;
       }
 
-      const parsed: unknown = JSON.parse(raw);
+      try {
+        let items = await readItems();
+        const recovered = items.map((item) =>
+          item.status === 'syncing'
+            ? {
+                ...item,
+                status: 'queued' as const,
+                lastError: item.lastError ?? 'Synchronization was interrupted and will retry.',
+                nextRetryAt: undefined,
+              }
+            : item,
+        );
 
-      return Array.isArray(parsed) ? (parsed as OfflineComplaintQueueItem[]) : [];
-    })
-    .catch(() => []);
-}
+        if (recovered.some((item, index) => item !== items[index])) {
+          await persistItems(recovered);
+        }
+        items = recovered;
 
-function persistItems(items: OfflineComplaintQueueItem[]) {
-  return AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items)).catch(() => {
-    // Non-fatal: queue stays in memory for the current session.
-  });
-}
+        const synced = items.filter((item) => item.status === 'synced');
+        for (const item of synced) {
+          try {
+            await removeOfflineAttachments(item.attachmentDirectoryUri);
+            items = items.filter((candidate) => candidate.id !== item.id);
+            await persistItems(items);
+          } catch {
+            // Retain the hidden synced item so cleanup can be retried on a later startup.
+          }
+        }
 
-export const useOfflineQueueStore = create<OfflineQueueState>((set, get) => ({
-  items: [],
-  isHydrated: false,
+        set({ items, isHydrated: true, hydrationError: undefined });
+      } catch (error) {
+        set({
+          isHydrated: true,
+          hydrationError: error instanceof Error ? error.message : 'Offline queue could not load.',
+        });
+      }
+    },
 
-  hydrate: async () => {
-    if (get().isHydrated) {
-      return;
-    }
+    enqueue: async ({ attachments, ownerUserId, payload }) => {
+      const id = await generateUUID();
+      const owned = await persistOfflineAttachments(id, attachments);
+      const item: OfflineComplaintQueueItem = {
+        id,
+        ownerUserId,
+        client_uuid: payload.client_ref || id,
+        payload,
+        attachments: owned.attachments,
+        attachmentDirectoryUri: owned.directoryUri,
+        status: 'queued',
+        createdAt: new Date().toISOString(),
+        retryCount: 0,
+      };
 
-    const items = await readItems();
-    set({ items, isHydrated: true });
-  },
+      try {
+        await update((items) => [...items, item]);
+        return item;
+      } catch (error) {
+        await removeOfflineAttachments(owned.directoryUri).catch(() => undefined);
+        throw error;
+      }
+    },
 
-  enqueue: async ({ attachments, payload }) => {
-    const id = await generateUUID();
-    const item: OfflineComplaintQueueItem = {
-      id,
-      client_uuid: payload.client_ref || id,
-      payload,
-      attachments,
-      status: 'queued',
-      createdAt: new Date().toISOString(),
-      retryCount: 0,
-    };
+    markSyncing: (id) =>
+      update((items) =>
+        items.map((item) =>
+          item.id === id ? { ...item, status: 'syncing' as const, nextRetryAt: undefined } : item,
+        ),
+      ),
 
-    const items = [...get().items, item];
-    set({ items });
-    void persistItems(items);
+    markFailed: (id, error, retryable) =>
+      update((items) =>
+        items.map((item) => {
+          if (item.id !== id) {
+            return item;
+          }
 
-    return item;
-  },
-
-  markSyncing: async (id) => {
-    const items = get().items.map((item) =>
-      item.id === id ? { ...item, status: 'syncing' as OfflineQueueStatus } : item,
-    );
-    set({ items });
-    void persistItems(items);
-  },
-
-  markFailed: async (id, error) => {
-    const items = get().items.map((item) =>
-      item.id === id
-        ? {
+          const retryCount = retryable ? item.retryCount + 1 : MAX_RETRIES;
+          return {
             ...item,
-            status: 'failed' as OfflineQueueStatus,
+            status: 'failed' as const,
             lastError: error,
-            retryCount: item.retryCount + 1,
-          }
-        : item,
-    );
-    set({ items });
-    void persistItems(items);
-  },
+            retryCount,
+            nextRetryAt:
+              retryable && retryCount < MAX_RETRIES
+                ? new Date(Date.now() + backoffMs(retryCount - 1)).toISOString()
+                : undefined,
+          };
+        }),
+      ),
 
-  markSynced: async (id) => {
-    const items = get().items.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            status: 'synced' as OfflineQueueStatus,
-            syncedAt: new Date().toISOString(),
-          }
-        : item,
-    );
-    set({ items });
-    void persistItems(items);
+    markSynced: async (id) => {
+      await update((items) =>
+        items.map((item) =>
+          item.id === id
+            ? { ...item, status: 'synced' as const, syncedAt: new Date().toISOString() }
+            : item,
+        ),
+      );
+      const item = get().items.find((candidate) => candidate.id === id);
+      await removeOfflineAttachments(item?.attachmentDirectoryUri);
+      await update((items) => items.filter((candidate) => candidate.id !== id));
+    },
 
-    void get().remove(id);
-  },
+    retry: (id) =>
+      update((items) =>
+        items.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status: 'queued' as const,
+                retryCount: 0,
+                lastError: undefined,
+                nextRetryAt: undefined,
+              }
+            : item,
+        ),
+      ),
 
-  remove: async (id) => {
-    const items = get().items.filter((item) => item.id !== id);
-    set({ items });
-    void persistItems(items);
-  },
-}));
+    remove: async (id) => {
+      const item = get().items.find((candidate) => candidate.id === id);
+      await update((items) =>
+        items.map((candidate) =>
+          candidate.id === id ? { ...candidate, status: 'synced' as const } : candidate,
+        ),
+      );
+      await removeOfflineAttachments(item?.attachmentDirectoryUri);
+      await update((items) => items.filter((candidate) => candidate.id !== id));
+    },
+  };
+});
 
-export function canRetry(item: OfflineComplaintQueueItem) {
-  return item.retryCount < MAX_RETRIES;
+export function canRetry(item: OfflineComplaintQueueItem, now = Date.now()) {
+  if (item.retryCount >= MAX_RETRIES) {
+    return false;
+  }
+
+  return !item.nextRetryAt || new Date(item.nextRetryAt).getTime() <= now;
 }

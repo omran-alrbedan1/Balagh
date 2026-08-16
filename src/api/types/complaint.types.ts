@@ -43,6 +43,19 @@ export interface ComplaintClassification {
   method: string;
 }
 
+export interface ComplaintInformationRequest {
+  id: string;
+  message: string;
+  status: 'pending' | 'responded';
+  requested_at: string;
+  responded_at?: string | null;
+  response_message?: string | null;
+  requested_by?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 export interface Complaint {
   id: string;
   client_ref: string;
@@ -62,6 +75,7 @@ export interface Complaint {
   source?: string;
   client_uuid?: string;
   classification?: ComplaintClassification;
+  active_information_request?: ComplaintInformationRequest | null;
   attachments: Attachment[];
   priority?: Priority;
   created_at: string;

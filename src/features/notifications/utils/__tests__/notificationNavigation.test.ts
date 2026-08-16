@@ -44,4 +44,18 @@ describe('resolveNotificationDestination', () => {
       }),
     ).toBeNull();
   });
+
+  it('routes additional-information events by complaint_id without inspecting localized copy', () => {
+    expect(
+      resolveNotificationDestination({
+        body: 'مطلوب ردك',
+        complaint_id: 23,
+        title: 'مطلوب معلومات إضافية',
+        type: 'complaint_status_updated',
+      }),
+    ).toEqual({
+      pathname: '/(app)/(tabs)/complaints/[id]',
+      params: { id: '23' },
+    });
+  });
 });

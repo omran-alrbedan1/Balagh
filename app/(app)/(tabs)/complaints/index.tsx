@@ -12,12 +12,17 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ComplaintCard } from '@/features/complaints/components/ComplaintCard';
+import { OfflineComplaintCard } from '@/features/complaints/components/OfflineComplaintCard';
+import { useOfflineQueueStore } from '@/features/complaints/store/offlineQueueStore';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import {
   ComplaintFilters,
   ComplaintStatusFilter,
 } from '@/features/complaints/components/ComplaintFilters';
 import { useComplaints } from '@/features/complaints/hooks/useComplaints';
 import { SortMode } from '@/features/complaints/utils/complaintDisplay';
+import { removeServerDuplicatesOfLocalComplaints } from '@/features/complaints/utils/offlineComplaintDisplay';
+import { isQueueItemOwnedBy } from '@/features/complaints/utils/offlineQueue';
 import { colors } from '@/theme/colors';
 
 export default function MyComplaintsScreen() {
@@ -25,19 +30,28 @@ export default function MyComplaintsScreen() {
   const [status, setStatus] = useState<ComplaintStatusFilter>('all');
   const [sort, setSort] = useState<SortMode>('newest');
   const complaintsQuery = useComplaints({ sort, status });
+  const userId = useAuthStore((state) => state.user?.id);
+  const ownerUserId = userId == null ? undefined : String(userId);
+  const offlineItems = useOfflineQueueStore((state) =>
+    state.items.filter((item) => item.status !== 'synced' && isQueueItemOwnedBy(item, ownerUserId)),
+  );
   const rawComplaints = useMemo(
     () => extractComplaints(complaintsQuery.data),
     [complaintsQuery.data],
   );
 
   const complaints = useMemo(() => {
+    const withoutLocalDuplicates = removeServerDuplicatesOfLocalComplaints(
+      rawComplaints,
+      offlineItems,
+    );
     const filtered =
       status === 'all'
-        ? rawComplaints
-        : rawComplaints.filter((complaint) => complaint.status === status);
+        ? withoutLocalDuplicates
+        : withoutLocalDuplicates.filter((complaint) => complaint.status === status);
 
     return [...filtered].sort((first, second) => sortComplaints(first, second, sort));
-  }, [rawComplaints, sort, status]);
+  }, [offlineItems, rawComplaints, sort, status]);
 
   return (
     <View className="flex-1 bg-surface-light">
@@ -50,9 +64,9 @@ export default function MyComplaintsScreen() {
         status={status}
       />
 
-      {complaintsQuery.isLoading ? (
+      {complaintsQuery.isLoading && offlineItems.length === 0 ? (
         <LoadingSpinner label={t('complaints.listLoading')} />
-      ) : complaintsQuery.error ? (
+      ) : complaintsQuery.error && rawComplaints.length === 0 && offlineItems.length === 0 ? (
         <View className="gap-4 px-6 pt-6">
           <ErrorState message={complaintsQuery.error.message} />
           <Button
@@ -67,18 +81,29 @@ export default function MyComplaintsScreen() {
           data={complaints}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <View className="gap-4 pt-6">
-              <EmptyState
-                icon={ClipboardCheck}
-                title={t('complaints.listEmptyTitle')}
-                message={t('complaints.listEmptyMessage')}
-              />
-              <Button
-                href="/(app)/(tabs)/complaints/new"
-                iconLeft={<PlusCircle color="#FFFFFF" size={19} />}
-                label={t('complaints.fileFirst')}
-              />
-            </View>
+            offlineItems.length === 0 ? (
+              <View className="gap-4 pt-6">
+                <EmptyState
+                  icon={ClipboardCheck}
+                  title={t('complaints.listEmptyTitle')}
+                  message={t('complaints.listEmptyMessage')}
+                />
+                <Button
+                  href="/(app)/(tabs)/complaints/new"
+                  iconLeft={<PlusCircle color="#FFFFFF" size={19} />}
+                  label={t('complaints.fileFirst')}
+                />
+              </View>
+            ) : null
+          }
+          ListHeaderComponent={
+            offlineItems.length > 0 ? (
+              <View className="pt-4">
+                {offlineItems.map((item) => (
+                  <OfflineComplaintCard item={item} key={item.id} />
+                ))}
+              </View>
+            ) : null
           }
           refreshControl={
             <RefreshControl

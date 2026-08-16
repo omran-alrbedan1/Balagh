@@ -12,7 +12,12 @@ import { useDraftComplaintStore } from '@/features/complaints/store/draftComplai
 import { useCategories } from '@/features/lookups/hooks/useCategories';
 import { useDepartments } from '@/features/lookups/hooks/useDepartments';
 
-export function StepReview({ onBack }: { onBack: () => void }) {
+interface StepReviewProps {
+  onBack: () => void;
+  onSubmissionSuccess: () => void;
+}
+
+export function StepReview({ onBack, onSubmissionSuccess }: StepReviewProps) {
   const { t } = useTranslation();
   const draft = useDraftComplaintStore();
   const { data: departments } = useDepartments();
@@ -26,6 +31,8 @@ export function StepReview({ onBack }: { onBack: () => void }) {
   const handleSubmit = () => {
     createComplaintMutation.mutate(undefined, {
       onSuccess: (result) => {
+        onSubmissionSuccess();
+
         if (result.queued) {
           router.replace('/(app)/(tabs)/complaints/index');
           return;

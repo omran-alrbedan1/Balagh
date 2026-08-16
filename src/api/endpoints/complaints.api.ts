@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/client';
 import { ApiEnvelope, PaginatedEnvelope } from '@/api/types/api-envelope.types';
 import { Complaint, CreateComplaintPayload } from '@/api/types/complaint.types';
-import { OfflineComplaintPayload } from '@/api/types/offline.types';
+import { OfflineComplaintPayload, OfflineSubmission } from '@/api/types/offline.types';
 
 export interface GetComplaintsParams {
   sort?: 'newest' | 'oldest' | 'sla';
@@ -16,13 +16,20 @@ export interface AttachmentUpload {
 
 export type ComplaintsEnvelope = PaginatedEnvelope<Complaint[] | { complaints: Complaint[] }>;
 export type ComplaintEnvelope = ApiEnvelope<Complaint | { complaint: Complaint }>;
+export interface OfflineSyncEnvelope extends ApiEnvelope<{
+  complaint: Complaint;
+  offline_submission: OfflineSubmission;
+}> {
+  meta?: { idempotent?: boolean };
+}
 
 export function extractComplaints(data?: ComplaintsEnvelope) {
   if (!data) {
     return [];
   }
 
-  return Array.isArray(data.data) ? data.data : data.data.complaints;
+  const complaints = Array.isArray(data.data) ? data.data : data.data.complaints;
+  return complaints.map(normalizeComplaintIds);
 }
 
 export function extractComplaint(data?: ComplaintEnvelope) {
@@ -30,7 +37,23 @@ export function extractComplaint(data?: ComplaintEnvelope) {
     return undefined;
   }
 
-  return 'complaint' in data.data ? data.data.complaint : data.data;
+  return normalizeComplaintIds('complaint' in data.data ? data.data.complaint : data.data);
+}
+
+function normalizeComplaintIds(complaint: Complaint): Complaint {
+  const request = complaint.active_information_request;
+  if (!request) return complaint;
+
+  return {
+    ...complaint,
+    active_information_request: {
+      ...request,
+      id: String(request.id),
+      requested_by: request.requested_by
+        ? { ...request.requested_by, id: String(request.requested_by.id) }
+        : request.requested_by,
+    },
+  };
 }
 
 function toFormDataFile(attachment: AttachmentUpload, index: number) {
@@ -97,16 +120,30 @@ export async function createComplaint(
 
 export async function addAttachment(
   complaintId: string,
-  attachmentUris: string[],
+  attachments: (AttachmentUpload | string)[],
+): Promise<ComplaintEnvelope> {
+  return addComplaintAttachments(
+    complaintId,
+    attachments.map((attachment, index) =>
+      typeof attachment === 'string'
+        ? {
+            uri: attachment,
+            name: `photo-${index + 1}.jpg`,
+            mimeType: 'image/jpeg',
+          }
+        : attachment,
+    ),
+  );
+}
+
+export async function addComplaintAttachments(
+  complaintId: string,
+  attachments: AttachmentUpload[],
 ): Promise<ComplaintEnvelope> {
   const formData = new FormData();
 
-  attachmentUris.forEach((uri, index) => {
-    formData.append('attachments[]', {
-      uri,
-      name: `photo-${index + 1}.jpg`,
-      type: 'image/jpeg',
-    } as unknown as Blob);
+  attachments.forEach((attachment, index) => {
+    formData.append('attachments[]', toFormDataFile(attachment, index));
   });
 
   const response = await apiClient.post<ComplaintEnvelope>(
@@ -114,7 +151,21 @@ export async function addAttachment(
     formData,
     {
       headers: { 'Content-Type': 'multipart/form-data' },
+      skipNetworkRetry: true,
     },
+  );
+
+  return response.data;
+}
+
+export async function respondToInformationRequest(
+  complaintId: string,
+  message: string,
+): Promise<ComplaintEnvelope> {
+  const response = await apiClient.post<ComplaintEnvelope>(
+    `/citizen/complaints/${complaintId}/information-response`,
+    { message },
+    { skipNetworkRetry: true },
   );
 
   return response.data;
@@ -123,7 +174,7 @@ export async function addAttachment(
 export async function syncOfflineComplaint(
   payload: OfflineComplaintPayload,
   attachments: AttachmentUpload[] = [],
-) {
+): Promise<OfflineSyncEnvelope> {
   const formData = new FormData();
   formData.append('client_uuid', payload.client_uuid);
   formData.append('title', payload.title);
@@ -166,7 +217,7 @@ export async function syncOfflineComplaint(
     formData.append('attachments[]', toFormDataFile(attachment, index));
   });
 
-  const response = await apiClient.post<ComplaintEnvelope>(
+  const response = await apiClient.post<OfflineSyncEnvelope>(
     '/citizen/offline/complaints/sync',
     formData,
     {

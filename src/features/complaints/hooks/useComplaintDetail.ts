@@ -8,6 +8,7 @@ export function useComplaintDetail(id: string) {
     enabled: Boolean(id),
     queryKey: queryKeys.complaint(id),
     queryFn: () => getComplaint(id),
+    refetchOnMount: 'always',
     retry: false,
     staleTime: 30 * 1000,
   });

@@ -1,15 +1,26 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect } from 'react';
 
+import { ApiError } from '@/api/client';
 import { syncOfflineComplaint } from '@/api/endpoints/complaints.api';
 import { OfflineComplaintPayload } from '@/api/types/offline.types';
 import { queryKeys } from '@/constants/queryKeys';
-import { useOfflineQueueStore, canRetry } from '@/features/complaints/store/offlineQueueStore';
-import { OfflineComplaintQueueItem } from '@/features/complaints/utils/offlineQueue';
+import {
+  canRetry,
+  MAX_RETRIES,
+  useOfflineQueueStore,
+} from '@/features/complaints/store/offlineQueueStore';
+import {
+  isQueueItemOwnedBy,
+  OfflineComplaintQueueItem,
+} from '@/features/complaints/utils/offlineQueue';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { useAppState } from '@/hooks/useAppState';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
-function toSyncPayload(item: OfflineComplaintQueueItem): OfflineComplaintPayload {
+let activeFlush: Promise<void> | null = null;
+
+export function toSyncPayload(item: OfflineComplaintQueueItem): OfflineComplaintPayload {
   const { payload } = item;
 
   return {
@@ -28,63 +39,110 @@ function toSyncPayload(item: OfflineComplaintQueueItem): OfflineComplaintPayload
   };
 }
 
-export function useOfflineSyncManager() {
-  const queryClient = useQueryClient();
-  const { isOnline } = useNetworkStatus();
-  const appState = useAppState();
-  const isHydrated = useOfflineQueueStore((state) => state.isHydrated);
-  const runningRef = useRef(false);
+function isRetryableSyncError(error: unknown) {
+  if (!(error instanceof ApiError) || !error.status) {
+    return true;
+  }
 
-  const flushQueue = useCallback(async () => {
-    const store = useOfflineQueueStore.getState();
+  return error.status === 408 || error.status === 429 || error.status >= 500;
+}
 
-    if (!store.isHydrated || runningRef.current) {
+export function flushOfflineQueue(queryClient: QueryClient): Promise<void> {
+  if (activeFlush) {
+    return activeFlush;
+  }
+
+  activeFlush = (async () => {
+    const initial = useOfflineQueueStore.getState();
+    const activeUserId = useAuthStore.getState().user?.id;
+    const ownerUserId = activeUserId == null ? undefined : String(activeUserId);
+    if (!initial.isHydrated) {
       return;
     }
 
-    const pending = store.items.filter(
-      (item) => (item.status === 'queued' || item.status === 'failed') && canRetry(item),
-    );
+    const pendingIds = initial.items
+      .filter(
+        (item) =>
+          isQueueItemOwnedBy(item, ownerUserId) &&
+          (item.status === 'queued' || item.status === 'failed') &&
+          canRetry(item),
+      )
+      .map((item) => item.id);
+    let didSync = false;
 
-    if (pending.length === 0) {
-      return;
-    }
+    for (const id of pendingIds) {
+      const current = useOfflineQueueStore
+        .getState()
+        .items.find((candidate) => candidate.id === id);
 
-    runningRef.current = true;
+      if (!current || current.status === 'syncing' || !canRetry(current)) {
+        continue;
+      }
 
-    try {
-      for (const item of pending) {
-        const current = useOfflineQueueStore.getState().items.find((entry) => entry.id === item.id);
-
-        if (!current || current.status === 'syncing') {
-          continue;
-        }
-
-        await useOfflineQueueStore.getState().markSyncing(item.id);
-
-        try {
-          await syncOfflineComplaint(toSyncPayload(item), item.attachments);
-          await useOfflineQueueStore.getState().markSynced(item.id);
-        } catch (error) {
+      try {
+        await useOfflineQueueStore.getState().markSyncing(id);
+        await syncOfflineComplaint(toSyncPayload(current), current.attachments);
+        didSync = true;
+        await useOfflineQueueStore.getState().markSynced(id);
+      } catch (error) {
+        const latest = useOfflineQueueStore.getState().items.find((item) => item.id === id);
+        if (latest?.status === 'syncing') {
           const message =
             error instanceof Error ? error.message : 'Offline sync failed. Please try again.';
-          await useOfflineQueueStore.getState().markFailed(item.id, message);
+          await useOfflineQueueStore
+            .getState()
+            .markFailed(id, message, isRetryableSyncError(error));
         }
       }
-    } finally {
-      runningRef.current = false;
     }
 
-    void queryClient.invalidateQueries({ queryKey: queryKeys.complaintsRoot });
-  }, [queryClient]);
+    if (didSync) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.complaintsRoot });
+    }
+  })().finally(() => {
+    activeFlush = null;
+  });
+
+  return activeFlush;
+}
+
+export function useOfflineSyncManager() {
+  const queryClient = useQueryClient();
+  const { status } = useNetworkStatus();
+  const appState = useAppState();
+  const isHydrated = useOfflineQueueStore((state) => state.isHydrated);
+  const items = useOfflineQueueStore((state) => state.items);
+
+  const flushQueue = useCallback(() => flushOfflineQueue(queryClient), [queryClient]);
 
   useEffect(() => {
     void useOfflineQueueStore.getState().hydrate();
   }, []);
 
   useEffect(() => {
-    if (isOnline && appState === 'active' && isHydrated) {
-      void flushQueue();
+    if (status !== 'online' || appState !== 'active' || !isHydrated) {
+      return;
     }
-  }, [appState, flushQueue, isHydrated, isOnline]);
+
+    const now = Date.now();
+    const delays = items
+      .filter(
+        (item) =>
+          (item.status === 'queued' || item.status === 'failed') && item.retryCount < MAX_RETRIES,
+      )
+      .map((item) => Math.max(0, new Date(item.nextRetryAt ?? now).getTime() - now));
+
+    if (delays.length === 0) {
+      return;
+    }
+
+    const timer = setTimeout(
+      () => {
+        void flushQueue().catch(() => undefined);
+      },
+      Math.min(...delays),
+    );
+
+    return () => clearTimeout(timer);
+  }, [appState, flushQueue, isHydrated, items, status]);
 }

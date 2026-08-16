@@ -32,6 +32,11 @@ export default function NewComplaintScreen() {
     setStep((current) => Math.max(current - 1, 1));
   };
 
+  const startFreshComplaint = () => {
+    setDirection(-1);
+    setStep(1);
+  };
+
   return (
     <Screen subtitle={t('complaints.newSubtitle')} title={t('complaints.newTitle')}>
       <Animated.View entering={FadeIn.duration(260)}>
@@ -48,7 +53,7 @@ export default function NewComplaintScreen() {
         {step === 2 ? <StepCategory onBack={back} onNext={next} /> : null}
         {step === 3 ? <StepPhotos onBack={back} onNext={next} /> : null}
         {step === 4 ? <StepLocation onBack={back} onNext={next} /> : null}
-        {step === 5 ? <StepReview onBack={back} /> : null}
+        {step === 5 ? <StepReview onBack={back} onSubmissionSuccess={startFreshComplaint} /> : null}
       </Animated.View>
     </Screen>
   );

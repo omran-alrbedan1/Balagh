@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { previewClassification } from '@/api/endpoints/classification.api';
 import { ClassificationPreviewPayload } from '@/api/types/classification.types';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
+import { normalizeClassificationConfidence } from '@/features/complaints/utils/classificationConfidence';
 
 export function useClassifyComplaint() {
   const setClassification = useDraftComplaintStore((state) => state.setClassification);
@@ -18,7 +19,7 @@ export function useClassifyComplaint() {
         departmentName: data.department?.name,
         categoryId: data.category ? String(data.category.id) : undefined,
         categoryName: data.category?.name,
-        confidence: data.confidence,
+        confidence: normalizeClassificationConfidence(data.confidence),
         method: data.method,
         error: undefined,
       });

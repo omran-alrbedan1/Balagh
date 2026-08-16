@@ -3,6 +3,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
   const allowCleartext = apiBaseUrl.startsWith('http://');
+  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
+  const mapsEnabled = Boolean(googleMapsApiKey);
 
   return {
     ...config,
@@ -37,6 +39,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: '#082248',
       },
     },
+    extra: {
+      ...config.extra,
+      mapsEnabled,
+    },
     scheme: 'balagh',
     plugins: [
       'expo-router',
@@ -58,13 +64,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           defaultChannel: 'default',
         },
       ],
-      ...(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
-        ? [
-            [
-              'react-native-maps',
-              { androidGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY },
-            ],
-          ]
+      ...(googleMapsApiKey
+        ? [['react-native-maps', { androidGoogleMapsApiKey: googleMapsApiKey }]]
         : []),
       [
         'expo-build-properties',

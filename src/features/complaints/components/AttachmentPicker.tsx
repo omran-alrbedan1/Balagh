@@ -12,9 +12,9 @@ import {
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
-const MAX_ATTACHMENTS = 5;
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = [
+export const MAX_ATTACHMENTS = 5;
+export const MAX_FILE_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_MIME_TYPES = [
   'image/jpeg',
   'image/png',
   'application/pdf',
@@ -32,10 +32,38 @@ async function compressImage(uri: string) {
 }
 
 export function AttachmentPicker() {
-  const { t } = useTranslation();
   const attachments = useDraftComplaintStore((state) => state.attachments);
   const addAttachment = useDraftComplaintStore((state) => state.addAttachment);
   const removeAttachment = useDraftComplaintStore((state) => state.removeAttachment);
+
+  return (
+    <ControlledAttachmentPicker
+      attachments={attachments}
+      captionKey="complaints.photoCaption"
+      onAdd={addAttachment}
+      onRemove={removeAttachment}
+    />
+  );
+}
+
+export type SelectableAttachment = DraftAttachment;
+
+interface ControlledAttachmentPickerProps {
+  attachments: SelectableAttachment[];
+  captionKey?: string;
+  disabled?: boolean;
+  onAdd: (attachment: Omit<SelectableAttachment, 'id'>) => void;
+  onRemove: (id: string) => void;
+}
+
+export function ControlledAttachmentPicker({
+  attachments,
+  captionKey = 'complaints.responseAttachmentCaption',
+  disabled = false,
+  onAdd,
+  onRemove,
+}: ControlledAttachmentPickerProps) {
+  const { t } = useTranslation();
   const canAddMore = attachments.length < MAX_ATTACHMENTS;
 
   const guardLimit = () => {
@@ -87,7 +115,12 @@ export function AttachmentPicker() {
 
     for (const asset of result.assets.slice(0, remaining)) {
       const compressedUri = await compressImage(asset.uri);
-      addAttachment({ kind: 'image', uri: compressedUri });
+      onAdd({
+        kind: 'image',
+        mimeType: 'image/jpeg',
+        name: asset.fileName ? `${asset.fileName.replace(/\.[^.]+$/, '')}.jpg` : 'image.jpg',
+        uri: compressedUri,
+      });
     }
   };
 
@@ -131,22 +164,37 @@ export function AttachmentPicker() {
         mimeType,
         size: asset.size,
       };
-      addAttachment(draftAttachment);
+      onAdd(draftAttachment);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.actions}>
-        <Pressable onPress={() => void handlePickImage('camera')} style={styles.pickButton}>
+        <Pressable
+          accessibilityRole="button"
+          disabled={disabled}
+          onPress={() => void handlePickImage('camera')}
+          style={[styles.pickButton, disabled && styles.disabled]}
+        >
           <Camera color={colors.primary} size={18} />
           <Text style={styles.pickText}>{t('complaints.camera')}</Text>
         </Pressable>
-        <Pressable onPress={() => void handlePickImage('gallery')} style={styles.pickButton}>
+        <Pressable
+          accessibilityRole="button"
+          disabled={disabled}
+          onPress={() => void handlePickImage('gallery')}
+          style={[styles.pickButton, disabled && styles.disabled]}
+        >
           <ImagePlus color={colors.primary} size={18} />
           <Text style={styles.pickText}>{t('complaints.gallery')}</Text>
         </Pressable>
-        <Pressable onPress={() => void handlePickDocument()} style={styles.pickButton}>
+        <Pressable
+          accessibilityRole="button"
+          disabled={disabled}
+          onPress={() => void handlePickDocument()}
+          style={[styles.pickButton, disabled && styles.disabled]}
+        >
           <FileText color={colors.primary} size={18} />
           <Text style={styles.pickText}>{t('complaints.document')}</Text>
         </Pressable>
@@ -158,9 +206,10 @@ export function AttachmentPicker() {
             <View key={attachment.id} style={styles.thumbnailWrap}>
               <Image source={{ uri: attachment.uri }} style={styles.thumbnail} />
               <Pressable
-                accessibilityLabel={t('complaints.removePhoto')}
+                accessibilityLabel={t('complaints.removeAttachment')}
                 accessibilityRole="button"
-                onPress={() => removeAttachment(attachment.id)}
+                disabled={disabled}
+                onPress={() => onRemove(attachment.id)}
                 style={styles.removeButton}
               >
                 <X color="#FFFFFF" size={14} />
@@ -173,9 +222,10 @@ export function AttachmentPicker() {
                 {attachment.name ?? t('complaints.document')}
               </Text>
               <Pressable
-                accessibilityLabel={t('complaints.removePhoto')}
+                accessibilityLabel={t('complaints.removeAttachment')}
                 accessibilityRole="button"
-                onPress={() => removeAttachment(attachment.id)}
+                disabled={disabled}
+                onPress={() => onRemove(attachment.id)}
                 style={styles.removeButton}
               >
                 <X color="#FFFFFF" size={14} />
@@ -186,7 +236,7 @@ export function AttachmentPicker() {
       </View>
 
       <Text style={styles.caption}>
-        {t('complaints.photoCaption', { count: attachments.length, max: MAX_ATTACHMENTS })}
+        {t(captionKey, { count: attachments.length, max: MAX_ATTACHMENTS })}
       </Text>
     </View>
   );
@@ -222,6 +272,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '700',
+  },
+  disabled: {
+    opacity: 0.5,
   },
   grid: {
     flexDirection: 'row',

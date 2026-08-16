@@ -15,6 +15,7 @@ export const queryClient = new QueryClient({
         return failureCount < 2;
       },
       staleTime: 60_000,
+      refetchOnReconnect: true,
     },
     mutations: {
       retry: false,

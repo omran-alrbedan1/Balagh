@@ -7,6 +7,7 @@ import MapView, { Marker, Region } from 'react-native-maps';
 
 import { Input } from '@/components/ui/Input';
 import { useDraftComplaintStore } from '@/features/complaints/store/draftComplaintStore';
+import { isMapSelectionEnabled } from '@/features/complaints/utils/mapCapability';
 import { colors } from '@/theme/colors';
 import { spacing } from '@/theme/spacing';
 
@@ -18,6 +19,8 @@ export function LocationPicker() {
   const [loading, setLoading] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [mapVisible, setMapVisible] = useState(false);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
+  const mapsEnabled = isMapSelectionEnabled();
   const initialCoordinate =
     location && location.lat !== 0 && location.lng !== 0
       ? { latitude: location.lat, longitude: location.lng }
@@ -35,21 +38,24 @@ export function LocationPicker() {
         return;
       }
 
-      const position = await Location.getCurrentPositionAsync({});
-      const [place] = await Location.reverseGeocodeAsync({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-      const resolvedAddress = place
-        ? [place.street, place.city, place.region].filter(Boolean).join(', ')
-        : undefined;
+      const { latitude, longitude } = (await Location.getCurrentPositionAsync({})).coords;
+      const fallbackAddress = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+      let resolvedAddress = fallbackAddress;
+
+      try {
+        const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+        const addressParts = place ? [place.street, place.city, place.region].filter(Boolean) : [];
+        resolvedAddress = addressParts.join(', ') || fallbackAddress;
+      } catch {
+        // Coordinates remain useful even when reverse geocoding is unavailable.
+      }
 
       setLocation({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+        lat: latitude,
+        lng: longitude,
         address: resolvedAddress,
       });
-      setAddress(resolvedAddress ?? '');
+      setAddress(resolvedAddress);
     } catch {
       setManualMode(true);
     } finally {
@@ -86,6 +92,18 @@ export function LocationPicker() {
     }
   };
 
+  const handleChooseOnMap = () => {
+    if (!mapsEnabled) {
+      setMapVisible(false);
+      setMapUnavailable(true);
+      setManualMode(true);
+      return;
+    }
+
+    setMapUnavailable(false);
+    setMapVisible((visible) => !visible);
+  };
+
   const region: Region = {
     ...selectedCoordinate,
     latitudeDelta: 0.04,
@@ -109,16 +127,14 @@ export function LocationPicker() {
         )}
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => setMapVisible((visible) => !visible)}
-        style={styles.mapButton}
-      >
+      <Pressable accessibilityRole="button" onPress={handleChooseOnMap} style={styles.mapButton}>
         <MapPin color={colors.primary} size={18} />
         <Text style={styles.mapButtonText}>{t('complaints.chooseOnMap')}</Text>
       </Pressable>
 
-      {mapVisible ? (
+      {mapUnavailable ? <Text style={styles.helper}>{t('complaints.mapUnavailable')}</Text> : null}
+
+      {mapsEnabled && mapVisible ? (
         <View style={styles.mapContainer}>
           <Text style={styles.helper}>{t('complaints.mapHint')}</Text>
           <MapView

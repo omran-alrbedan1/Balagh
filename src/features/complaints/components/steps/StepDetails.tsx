@@ -15,6 +15,7 @@ import {
   getComplaintDetailsSchema,
 } from '@/features/complaints/utils/validation';
 import { colors } from '@/theme/colors';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface StepDetailsProps {
   onBack?: () => void;
@@ -29,6 +30,7 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
   const setTitleDescription = useDraftComplaintStore((state) => state.setTitleDescription);
   const setClassification = useDraftComplaintStore((state) => state.setClassification);
   const classifyComplaint = useClassifyComplaint();
+  const { isOnline } = useNetworkStatus();
   const { control, handleSubmit } = useForm<ComplaintDetailsValues>({
     defaultValues: { description, title },
     resolver: zodResolver(complaintDetailsSchema),
@@ -36,6 +38,14 @@ export function StepDetails({ onBack, onNext }: StepDetailsProps) {
 
   const onSubmit = (values: ComplaintDetailsValues) => {
     setTitleDescription(values.title, values.description);
+    if (!isOnline) {
+      setClassification({
+        status: 'error',
+        error: t('complaints.classificationOffline'),
+      });
+      onNext();
+      return;
+    }
     setClassification({ status: 'loading', error: undefined });
     classifyComplaint.mutate({ title: values.title, description: values.description });
     onNext();
