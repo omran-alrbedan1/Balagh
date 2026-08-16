@@ -14,3 +14,9 @@ export function initSentry() {
 
   initialized = true;
 }
+
+export function captureException(error: unknown) {
+  if (initialized) {
+    Sentry.captureException(error);
+  }
+}

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
+import { router } from 'expo-router';
 
 import { useComplaints } from '@/features/complaints/hooks/useComplaints';
 
-import MyComplaintsScreen from '../index';
+import MyComplaintsScreen, { ErrorBoundary } from '../index';
 
 jest.mock('@shopify/flash-list', () => ({
   FlashList: ({ data, keyExtractor, ListEmptyComponent, ListHeaderComponent, renderItem }: any) => {
@@ -19,6 +20,7 @@ jest.mock('@shopify/flash-list', () => ({
     );
   },
 }));
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
 jest.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 jest.mock('@/lib/i18n', () => ({ __esModule: true, default: { language: 'en' } }));
 jest.mock('lucide-react-native', () => ({
@@ -28,9 +30,13 @@ jest.mock('lucide-react-native', () => ({
 }));
 jest.mock('@/components/layout/PageHeader', () => ({ PageHeader: () => null }));
 jest.mock('@/components/ui/Button', () => ({
-  Button: ({ label }: { label: string }) => {
-    const { Text } = require('react-native');
-    return <Text>{label}</Text>;
+  Button: ({ label, onPress }: { label: string; onPress?: () => void }) => {
+    const { Pressable, Text } = require('react-native');
+    return (
+      <Pressable accessibilityLabel={label} onPress={onPress}>
+        <Text>{label}</Text>
+      </Pressable>
+    );
   },
 }));
 jest.mock('@/components/ui/EmptyState', () => ({
@@ -65,6 +71,7 @@ jest.mock('@/features/complaints/store/offlineQueueStore', () => ({
 jest.mock('@/features/auth/store/authStore', () => ({
   useAuthStore: (selector: any) => selector({ user: { id: 'user-1' } }),
 }));
+jest.mock('@/lib/logger', () => ({ logError: jest.fn() }));
 
 const mockedComplaints = useComplaints as jest.MockedFunction<typeof useComplaints>;
 const serverComplaint = (id: unknown, title = 'Pothole') => ({
@@ -134,4 +141,16 @@ it('renders the controlled empty state for an empty offline cache', () => {
 
   const view = render(<MyComplaintsScreen />);
   expect(view.getByText('complaints.listEmptyTitle')).toBeTruthy();
+});
+
+it('contains list render failures with retry and home recovery actions', () => {
+  const retry = jest.fn();
+  const view = render(<ErrorBoundary error={new Error('unsafe record')} retry={retry} />);
+
+  expect(view.getByText('error:complaints.displayError')).toBeTruthy();
+  fireEvent.press(view.getByLabelText('common.tryAgain'));
+  fireEvent.press(view.getByLabelText('common.home'));
+
+  expect(retry).toHaveBeenCalledTimes(1);
+  expect(router.replace).toHaveBeenCalledWith('/(app)/(tabs)');
 });

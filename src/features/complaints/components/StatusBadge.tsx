@@ -1,11 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ComplaintStatus } from '@/api/types/lookups.types';
-import { getStatusLabel, STATUS_TONES } from '@/features/complaints/utils/complaintDisplay';
+import { getStatusLabel, getStatusTone } from '@/features/complaints/utils/complaintDisplay';
 import { spacing } from '@/theme/spacing';
 
-export function StatusBadge({ status }: { status: ComplaintStatus }) {
-  const tone = STATUS_TONES[status];
+export function StatusBadge({ status }: { status: string }) {
+  const tone = getStatusTone(status);
 
   return (
     <View style={[styles.badge, { backgroundColor: tone.background, borderColor: tone.border }]}>

@@ -19,8 +19,11 @@ export const STATUS_LABELS: Record<ComplaintStatus, string> = {
   submitted: 'Submitted',
 };
 
-export function getStatusLabel(status: ComplaintStatus) {
-  return i18next.t(`status.${status}`, { defaultValue: STATUS_LABELS[status] });
+export function getStatusLabel(status: string) {
+  const knownLabel = STATUS_LABELS[status as ComplaintStatus];
+  const fallbackLabel = knownLabel ?? humanizeStatus(status);
+
+  return i18next.t(`status.${status}`, { defaultValue: fallbackLabel });
 }
 
 export const STATUS_TONES: Record<
@@ -78,6 +81,25 @@ export const STATUS_TONES: Record<
     foreground: colors.danger,
   },
 };
+
+const FALLBACK_STATUS_TONE = {
+  background: colors.surfaceMuted,
+  border: colors.border,
+  foreground: colors.textMuted,
+};
+
+export function getStatusTone(status: string) {
+  return STATUS_TONES[status as ComplaintStatus] ?? FALLBACK_STATUS_TONE;
+}
+
+function humanizeStatus(status: string) {
+  const normalized = status.trim().replace(/[-_]+/g, ' ');
+  if (!normalized) {
+    return i18next.t('common.notAvailable');
+  }
+
+  return normalized.replace(/\b\w/g, (character) => character.toUpperCase());
+}
 
 export function formatDate(value?: string) {
   if (!value) {

@@ -137,6 +137,7 @@
     "title": "Profile"
   },
   "complaints": {
+    "displayError": "Unable to display complaints",
     "addPhotos": "Add photos",
     "addPhotosSubtitle": "Photos help the assigned team understand and resolve the issue faster.",
     "addressPlaceholder": "Street, city, landmark...",

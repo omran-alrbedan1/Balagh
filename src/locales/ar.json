@@ -137,6 +137,7 @@
     "title": "الملف الشخصي"
   },
   "complaints": {
+    "displayError": "تعذر عرض البلاغات",
     "addPhotos": "إضافة صور",
     "addPhotosSubtitle": "تساعد الصور الفريق المختص على فهم المشكلة وحلها أسرع.",
     "addressPlaceholder": "الشارع، المدينة، معلم قريب...",

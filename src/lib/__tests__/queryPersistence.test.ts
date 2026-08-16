@@ -96,6 +96,55 @@ it('discards legacy unscoped complaint cache entries without removing dashboard 
   restartedClient.clear();
 });
 
+it('migrates a legacy private cache by discarding only complaint query data', async () => {
+  const legacyClient = new QueryClient();
+  legacyClient.setQueryData(['complaints', 'user-1', 'list', 'all', 'newest'], {
+    data: [{ id: 1, status: 'legacy_status' }],
+  });
+  legacyClient.setQueryData(['home', 'dashboard'], { data: { counts: { active: 3 } } });
+  const { dehydrate } = require('@tanstack/react-query');
+  await AsyncStorage.setItem(
+    'balagh.queryCache.user.v1.user-1',
+    JSON.stringify(dehydrate(legacyClient)),
+  );
+
+  const restartedClient = new QueryClient();
+  await hydratePersistedQueries(restartedClient);
+
+  expect(
+    restartedClient.getQueryData(['complaints', 'user-1', 'list', 'all', 'newest']),
+  ).toBeUndefined();
+  expect(restartedClient.getQueryData(['home', 'dashboard'])).toEqual({
+    data: { counts: { active: 3 } },
+  });
+  expect(JSON.parse((await AsyncStorage.getItem('balagh.queryCache.user.v1.user-1'))!)).toEqual(
+    expect.objectContaining({ version: 2 }),
+  );
+  legacyClient.clear();
+  restartedClient.clear();
+});
+
+it('removes a corrupt private cache without deleting public lookup data', async () => {
+  const publicClient = new QueryClient();
+  publicClient.setQueryData(['lookups', 'departments', 'en'], [{ id: 'department-1' }]);
+  const { dehydrate } = require('@tanstack/react-query');
+  await AsyncStorage.setItem(
+    'balagh.queryCache.public.v1',
+    JSON.stringify(dehydrate(publicClient)),
+  );
+  await AsyncStorage.setItem('balagh.queryCache.user.v1.user-1', '{invalid');
+
+  const restartedClient = new QueryClient();
+  await hydratePersistedQueries(restartedClient);
+
+  expect(restartedClient.getQueryData(['lookups', 'departments', 'en'])).toEqual([
+    { id: 'department-1' },
+  ]);
+  expect(await AsyncStorage.getItem('balagh.queryCache.user.v1.user-1')).toBeNull();
+  publicClient.clear();
+  restartedClient.clear();
+});
+
 it('removes the authenticated user private cache on logout', async () => {
   await AsyncStorage.setItem('balagh.queryCache.user.v1.user-1', 'private');
   await AsyncStorage.setItem('balagh.queryCache.user.v1.user-2', 'other-user');

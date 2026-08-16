@@ -1,6 +1,7 @@
 import { FlashList } from '@shopify/flash-list';
+import { ErrorBoundaryProps, router } from 'expo-router';
 import { ClipboardCheck, PlusCircle, RefreshCw } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +25,30 @@ import { SortMode } from '@/features/complaints/utils/complaintDisplay';
 import { removeServerDuplicatesOfLocalComplaints } from '@/features/complaints/utils/offlineComplaintDisplay';
 import { isQueueItemOwnedBy } from '@/features/complaints/utils/offlineQueue';
 import { colors } from '@/theme/colors';
+import { logError } from '@/lib/logger';
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    logError(error, 'ComplaintsRouteError');
+  }, [error]);
+
+  return (
+    <View className="flex-1 bg-surface-light">
+      <PageHeader title={t('complaints.listTitle')} />
+      <View className="gap-4 px-6 pt-6">
+        <ErrorState message={t('complaints.displayError')} />
+        <Button label={t('common.tryAgain')} onPress={retry} />
+        <Button
+          label={t('common.home')}
+          onPress={() => router.replace('/(app)/(tabs)')}
+          variant="secondary"
+        />
+      </View>
+    </View>
+  );
+}
 
 export default function MyComplaintsScreen() {
   const { t } = useTranslation();
