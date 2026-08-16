@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { ErrorBoundaryProps, router } from 'expo-router';
 import { ClipboardCheck, PlusCircle, RefreshCw } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshControl, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { extractComplaints } from '@/api/endpoints/complaints.api';
@@ -39,16 +39,30 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       <PageHeader title={t('complaints.listTitle')} />
       <View className="gap-4 px-6 pt-6">
         <ErrorState message={t('complaints.displayError')} />
-        <Button label={t('common.tryAgain')} onPress={retry} />
+        <Button label={t('common.tryAgain')} onPress={retry} style={errorBoundaryStyles.tryAgain} />
         <Button
           label={t('common.home')}
           onPress={() => router.replace('/(app)/(tabs)')}
+          style={errorBoundaryStyles.home}
           variant="secondary"
         />
       </View>
     </View>
   );
 }
+
+const errorBoundaryStyles = StyleSheet.create({
+  home: {
+    backgroundColor: colors.card,
+    borderColor: colors.primary,
+    borderWidth: 2,
+  },
+  tryAgain: {
+    backgroundColor: colors.primary,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+});
 
 export default function MyComplaintsScreen() {
   const { t } = useTranslation();
@@ -57,8 +71,15 @@ export default function MyComplaintsScreen() {
   const complaintsQuery = useComplaints({ sort, status });
   const userId = useAuthStore((state) => state.user?.id);
   const ownerUserId = userId == null ? undefined : String(userId);
-  const offlineItems = useOfflineQueueStore((state) =>
-    state.items.filter((item) => item.status !== 'synced' && isQueueItemOwnedBy(item, ownerUserId)),
+  // Zustand v5: select the stable `items` reference only. Filtering inside the selector
+  // allocates a new array every snapshot and can infinite-loop via useSyncExternalStore.
+  const queueItems = useOfflineQueueStore((state) => state.items);
+  const offlineItems = useMemo(
+    () =>
+      queueItems.filter(
+        (item) => item.status !== 'synced' && isQueueItemOwnedBy(item, ownerUserId),
+      ),
+    [ownerUserId, queueItems],
   );
   const rawComplaints = useMemo(
     () => extractComplaints(complaintsQuery.data),

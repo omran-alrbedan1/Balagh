@@ -153,4 +153,6 @@ it('contains list render failures with retry and home recovery actions', () => {
 
   expect(retry).toHaveBeenCalledTimes(1);
   expect(router.replace).toHaveBeenCalledWith('/(app)/(tabs)');
+  expect(view.getByLabelText('common.home')).toBeTruthy();
+  expect(view.getByLabelText('common.tryAgain')).toBeTruthy();
 });
